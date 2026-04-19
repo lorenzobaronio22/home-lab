@@ -24,7 +24,7 @@ helm upgrade \
 ## Setup ProxyGroup for ingress HA
 
 ```bash
-kubectl apply -f tailscale.yaml
+kubectl -n tailscale apply -f tailscale.yaml
 ```
 
 ## [Optional] Expose a NGINX example service

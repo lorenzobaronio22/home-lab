@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: example
   annotations:
-    tailscale.com/proxy-group: ingress-proxies
+    tailscale.com/proxy-group: private-ingress-proxies
 spec:
   defaultBackend:
     service:
