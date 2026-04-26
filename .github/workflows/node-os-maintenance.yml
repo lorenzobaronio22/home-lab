@@ -1,0 +1,265 @@
+name: Node OS Maintenance
+
+on:
+  schedule:
+    - cron: "0 3 * * 6"
+  workflow_dispatch:
+
+concurrency:
+  group: node-os-maintenance
+  cancel-in-progress: false
+
+jobs:
+  patch-one-node:
+    name: Patch one Ubuntu node
+    if: ${{ vars.MAINTENANCE_PAUSED != 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required variables and secrets
+        env:
+          TS_IP_K3S1: ${{ vars.TS_IP_K3S1 }}
+          TS_IP_K3S2: ${{ vars.TS_IP_K3S2 }}
+          TS_IP_K3S3: ${{ vars.TS_IP_K3S3 }}
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          for var in TS_IP_K3S1 TS_IP_K3S2 TS_IP_K3S3 TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+            if [ -z "${!var}" ]; then
+              echo "Missing required value: $var" >&2
+              exit 1
+            fi
+          done
+
+      - name: Connect runner to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Configure kubeconfig
+        run: |
+          tailscale configure kubeconfig tailscale-operator
+
+      - name: Select weekly target node
+        env:
+          TS_IP_K3S1: ${{ vars.TS_IP_K3S1 }}
+          TS_IP_K3S2: ${{ vars.TS_IP_K3S2 }}
+          TS_IP_K3S3: ${{ vars.TS_IP_K3S3 }}
+        run: |
+          set -euo pipefail
+          week="$(date -u +%V)"
+          index="$((10#$week % 3))"
+
+          case "$index" in
+            0)
+              target_node="k3s1"
+              target_ip="$TS_IP_K3S1"
+              ;;
+            1)
+              target_node="k3s2"
+              target_ip="$TS_IP_K3S2"
+              ;;
+            2)
+              target_node="k3s3"
+              target_ip="$TS_IP_K3S3"
+              ;;
+          esac
+
+          echo "TARGET_NODE=$target_node" >> "$GITHUB_ENV"
+          echo "TARGET_IP=$target_ip" >> "$GITHUB_ENV"
+          echo "ISO_WEEK=$week" >> "$GITHUB_ENV"
+          echo "Selected target node: $target_node (ISO week $week, index $index)"
+
+      - name: Precheck cluster health
+        env:
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+        run: |
+          set -euo pipefail
+
+          # Verify all cluster nodes are reachable
+          for node in k3s1 k3s2 k3s3; do
+            kubectl get node "$node" >/dev/null
+          done
+
+          # Verify all nodes are in Ready state
+          not_ready="$(kubectl get nodes --no-headers | awk '$2 != "Ready" {print $1}')"
+          if [ -n "$not_ready" ]; then
+            echo "Cluster has NotReady nodes:"
+            echo "$not_ready"
+            exit 1
+          fi
+
+          # Verify target node pointed by env variables is in Ready
+          target_ready="$(kubectl get node "$TARGET_NODE" -o jsonpath='{range .status.conditions[?(@.type=="Ready")]}{.status}{end}')"
+          if [ "$target_ready" != "True" ]; then
+            echo "Target node is not Ready: $TARGET_NODE"
+            exit 1
+          fi
+
+      - name: Cordon target node
+        env:
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+        run: |
+          set -euo pipefail
+          kubectl cordon "$TARGET_NODE"
+
+      - name: Apply Ubuntu updates on target node
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+        run: |
+          set -euo pipefail
+          tailscale ssh "root@$TARGET_IP" '
+            set -euo pipefail
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get -y dist-upgrade
+            apt-get -y autoremove --purge
+          '
+
+      - name: Capture current boot ID
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+        run: |
+          set -euo pipefail
+          boot_id="$(tailscale ssh "root@$TARGET_IP" 'cat /proc/sys/kernel/random/boot_id')"
+          echo "BOOT_ID_BEFORE=$boot_id" >> "$GITHUB_ENV"
+          echo "Current boot ID: $boot_id"
+
+      - name: Schedule reboot safely
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+        run: |
+          set -euo pipefail
+          tailscale ssh "root@$TARGET_IP" '
+            set -euo pipefail
+            systemd-run \
+              --unit=github-maintenance-reboot \
+              --description="Scheduled by GitHub Actions node maintenance" \
+              --on-active=5s \
+              /usr/sbin/reboot'
+          echo "Reboot scheduled successfully"
+
+      - name: Wait for node to go down
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 20); do
+            if ! tailscale ssh "root@$TARGET_IP" 'echo still-up' >/dev/null 2>&1; then
+              echo "Node has started shutting down"
+              exit 0
+            fi
+            echo "Waiting for node shutdown ($attempt/20)"
+            sleep 5
+          done
+          echo "Node never appeared to go down"
+          exit 1
+
+      - name: Wait for node SSH to return
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 40); do
+            if tailscale ssh "root@$TARGET_IP" 'echo ssh-ok' >/dev/null 2>&1; then
+              echo "Node is reachable again via Tailscale SSH"
+              exit 0
+            fi
+            echo "Waiting for SSH ($attempt/40)"
+            sleep 15
+          done
+          echo "Timed out waiting for SSH on target node"
+          exit 1
+
+      - name: Verify boot ID changed
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+          BOOT_ID_BEFORE: ${{ env.BOOT_ID_BEFORE }}
+        run: |
+          set -euo pipefail
+          boot_id_after="$(tailscale ssh "root@$TARGET_IP" 'cat /proc/sys/kernel/random/boot_id')"
+          echo "Boot ID after reboot: $boot_id_after"
+          if [ "$boot_id_after" = "$BOOT_ID_BEFORE" ]; then
+            echo "Boot ID did not change; reboot likely did not happen"
+            exit 1
+          fi
+
+      - name: Verify k3s service on target node
+        env:
+          TARGET_IP: ${{ env.TARGET_IP }}
+        run: |
+          set -euo pipefail
+          tailscale ssh "root@$TARGET_IP" 'systemctl is-active --quiet k3s'
+
+      - name: Wait for target node to become Ready in cluster
+        env:
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 40); do
+            ready="$(kubectl get node "$TARGET_NODE" -o jsonpath='{range .status.conditions[?(@.type=="Ready")]}{.status}{end}')"
+            if [ "$ready" = "True" ]; then
+              echo "Target node is Ready again"
+              exit 0
+            fi
+            echo "Waiting for node Ready ($attempt/40)"
+            sleep 15
+          done
+          echo "Timed out waiting for Ready node condition"
+          exit 1
+
+      - name: Uncordon target node
+        env:
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+        run: |
+          set -euo pipefail
+          kubectl uncordon "$TARGET_NODE"
+
+      - name: Final node status
+        env:
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+        run: |
+          kubectl get node "$TARGET_NODE" -o wide
+
+      - name: Telegram success notification
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+          ISO_WEEK: ${{ env.ISO_WEEK }}
+        run: |
+          set -euo pipefail
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE="SUCCESS: Node OS maintenance completed%0ARepo: ${{ github.repository }}%0ATarget: ${TARGET_NODE}%0AISO week: ${ISO_WEEK}%0ARun: ${RUN_URL}"
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=${MESSAGE}"
+
+      - name: Telegram failure notification
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TARGET_NODE: ${{ env.TARGET_NODE }}
+          ISO_WEEK: ${{ env.ISO_WEEK }}
+        run: |
+          set -euo pipefail
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE="FAILED: Node OS maintenance did not complete%0ARepo: ${{ github.repository }}%0ATarget: ${TARGET_NODE:-unknown}%0AISO week: ${ISO_WEEK:-unknown}%0ARun: ${RUN_URL}"
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=${MESSAGE}"
