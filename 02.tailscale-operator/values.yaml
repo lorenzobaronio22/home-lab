@@ -1,0 +1,6 @@
+tailscale-operator:
+  oauth:
+    clientId: ""
+    clientSecret: ""
+  apiServerProxyConfig:
+    mode: "true"

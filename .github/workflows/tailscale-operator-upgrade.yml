@@ -1,0 +1,90 @@
+name: Tailscale Operator Upgrade
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "02.tailscale-operator/**"
+      - ".github/workflows/tailscale-operator-upgrade.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: tailscale-operator-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    name: Upgrade tailscale-operator on k3s
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      RELEASE_NAME: tailscale-operator
+      RELEASE_NAMESPACE: tailscale
+      CHART_PATH: ./02.tailscale-operator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required secrets
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          TS_OPERATOR_OAUTH_CLIENT_ID: ${{ secrets.TS_OPERATOR_OAUTH_CLIENT_ID }}
+          TS_OPERATOR_OAUTH_CLIENT_SECRET: ${{ secrets.TS_OPERATOR_OAUTH_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          for var in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET TS_OPERATOR_OAUTH_CLIENT_ID TS_OPERATOR_OAUTH_CLIENT_SECRET; do
+            if [ -z "${!var}" ]; then
+              echo "Missing required secret: $var" >&2
+              exit 1
+            fi
+          done
+
+      - name: Connect runner to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Configure kubeconfig
+        run: |
+          tailscale configure kubeconfig tailscale-operator
+
+      - name: Validate cluster access
+        run: kubectl get nodes
+
+      - name: Update chart dependencies
+        run: helm dependency update "$CHART_PATH"
+
+      - name: Validate rendered manifests
+        run: |
+          helm template "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --values "$CHART_PATH/values.yaml" > /tmp/tailscale-operator-rendered.yaml
+
+      - name: Upgrade release
+        env:
+          TS_OPERATOR_OAUTH_CLIENT_ID: ${{ secrets.TS_OPERATOR_OAUTH_CLIENT_ID }}
+          TS_OPERATOR_OAUTH_CLIENT_SECRET: ${{ secrets.TS_OPERATOR_OAUTH_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --create-namespace \
+            --values "$CHART_PATH/values.yaml" \
+            --set-string tailscale-operator.oauth.clientId="$TS_OPERATOR_OAUTH_CLIENT_ID" \
+            --set-string tailscale-operator.oauth.clientSecret="$TS_OPERATOR_OAUTH_CLIENT_SECRET" \
+            --wait
+
+      - name: Verify operator rollout
+        run: kubectl -n "$RELEASE_NAMESPACE" rollout status deployment/operator --timeout=5m
