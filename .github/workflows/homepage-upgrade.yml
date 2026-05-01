@@ -1,0 +1,85 @@
+name: Homepage Upgrade
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "99.apps/homepage/**"
+      - ".github/workflows/homepage-upgrade.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: homepage-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    name: Upgrade homepage on k3s
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      RELEASE_NAME: homepage
+      RELEASE_NAMESPACE: homepage
+      CHART_PATH: ./99.apps/homepage
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required secrets
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+        run: |
+          set -euo pipefail
+          for var in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET; do
+            if [ -z "${!var}" ]; then
+              echo "Missing required secret: $var" >&2
+              exit 1
+            fi
+          done
+
+      - name: Connect runner to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Configure kubeconfig
+        run: |
+          tailscale configure kubeconfig tailscale-operator
+
+      - name: Validate cluster access
+        run: kubectl get nodes
+
+      - name: Validate rendered manifests
+        run: |
+          helm template "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --values "$CHART_PATH/values.yaml" > /tmp/homepage-rendered.yaml
+
+      - name: Upgrade release
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --create-namespace \
+            --values "$CHART_PATH/values.yaml" \
+            --wait
+
+      - name: Verify deployment rollout
+        run: |
+          kubectl -n "$RELEASE_NAMESPACE" rollout status deployment/homepage --timeout=5m
+
+      - name: Verify namespace workloads
+        run: |
+          kubectl -n "$RELEASE_NAMESPACE" get pods

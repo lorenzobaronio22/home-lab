@@ -1,0 +1,221 @@
+image:
+  repository: ghcr.io/gethomepage/homepage
+  tag: v1.12.3
+  pullPolicy: Always
+
+replicaCount: 1
+
+serviceAccount:
+  create: true
+  name: homepage
+
+service:
+  port: 3000
+
+ingress:
+  enabled: true
+  className: tailscale
+  annotations:
+    tailscale.com/proxy-group: private-ingress-proxies
+  hosts:
+    - homepage
+
+config:
+  bookmarks: |
+    - Cloud:
+      - Tailscale:
+        - abbr: TS
+          href: https://login.tailscale.com/admin/machines
+      - Oracle Cloud:
+        - abbr: OCI
+          href: https://www.oracle.com/it/cloud/sign-in.html
+      - Hetzner Console:
+        - abbr: HTZ
+          href: https://console.hetzner.com
+      - Cloudflare:
+        - abbr: CF
+          href: https://dash.cloudflare.com
+      - Grafana cloud stack manager:
+        - abbr: GC
+          href: https://grafana.com/orgs/lorenzobaronio/stacks/572614
+      - Google Cloud Platform:
+        - abbr: GCP
+          href: https://console.cloud.google.com
+      - Firebase:
+        - abbr: FB
+          href: https://console.firebase.google.com
+      - Netdata cloud:
+        - abbr: NC
+          href: https://app.netdata.cloud
+      - Planetscale:
+        - abbr: PS
+          href: https://app.planetscale.com/lorenzo-baronio
+      - Doppler:
+        - abbr: D
+          href: https://dashboard.doppler.com
+      - Mailgun:
+        - abbr: MG
+          href: https://app.mailgun.com
+
+    - Developer:
+      - Github:
+        - abbr: GH
+          href: https://github.com/lorenzobaronio22
+      - BitBucker:
+        - abbr: BB
+          href: https://bitbucket.org/lollo22/workspace/overview/
+      - Proxmox VE Helper-Scripts:
+        - abbr: PVEH
+          href: https://community-scripts.github.io/ProxmoxVE/scripts
+      - IT-Tools:
+        - abbr: IT-T
+          href: https://it-tools.tech/
+
+    - Contacts:
+      - Gmail:
+        - abbr: G
+          href: https://mail.google.com/
+      - Outlook:
+        - abbr: O
+          href: https://outlook.live.com/mail/0/
+      - Facebook:
+        - abbr: FB
+          href: https://www.facebook.com/lollobaronio/
+      - X:
+        - abbr: X
+          href: https://x.com/lollobaronio
+      - Linkedin:
+        - abbr: IN
+          href: https://www.linkedin.com/in/lorenzobaronio/
+      - Reddit:
+        - abbr: RE
+          href: https://www.reddit.com/user/banzo22/
+  customCss: ""
+  customJs: ""
+  docker: ""
+  kubernetes: |
+    mode: cluster
+  proxmox: ""
+  services: |
+    - Host Management:
+      - Proxmox Virtual Environment Cluster:
+          href: https://pve-cluster.tail10187.ts.net
+          icon: proxmox
+      - Proxmox Virtual Environment:
+          href: https://pve.tail10187.ts.net
+          icon: proxmox
+      - Proxmox Virtual Environment 1:
+          href: https://pve1.tail10187.ts.net
+          icon: proxmox
+      - Proxmox Virtual Environment 2:
+          href: https://pve2.tail10187.ts.net
+          icon: proxmox
+      - Proxmox Virtual Environment 3:
+          href: https://pve3.tail10187.ts.net
+          icon: proxmox
+      - Proxmox Backup Server:
+          href: https://pbs.tail10187.ts.net
+          icon: proxmox-light
+      - Longhorn k3s Cluster Dashboard:
+          href: https://longhorn.tail10187.ts.net
+          icon: longhorn
+    - Public Services:
+      - Im Learning Lab:
+          href: https://lab.im-learning.app
+          icon: https://lab.im-learning.app/pluginfile.php/1/core_admin/favicon/64x64/1725729838/icona-3.png
+          description: Natalia's academy moodle site
+      - Im Learning:
+          href: https://im-learning.app
+          icon: wordpress
+          description: Natalia's academy wordpress site
+      - Gem Garden Modena:
+          href: https://gemgarden.org/
+          icon: wordpress
+          description: Gem Garden's wordpress site
+      - Vault:
+          href: https://vault.lorenzobaronio.com
+          icon: vaultwarden
+          description: Lorenzo's vaultwarden instance
+      - Notes:
+          href: https://notes.lorenzobaronio.com
+          icon: docmost
+          description: Lorenzo's Docmost instance
+      - Blog:
+          href: https://www.lorenzobaronio.com
+          icon: https://www.lorenzobaronio.com/favicon.ico
+          description: Lorenzo's Docmost instance public pages
+    - Private Services:
+      - NAS:
+          href: https://nas.tail10187.ts.net
+          icon: cockpit
+      - Keycloak:
+          href: https://keycloak.tail10187.ts.net
+          icon: keycloak
+      - CTFreak:
+          href: https://ctfreak.tail10187.ts.net
+          icon: ctfreak
+      - Jellyfin:
+          href: https://jellyfin.tail10187.ts.net
+          icon: jellyfin
+      - qBittorrent:
+          href: https://qbittorrent.tail10187.ts.net
+          icon: qbittorrent
+      - Prowlarr:
+          href: https://prowlarr.tail10187.ts.net
+          icon: prowlarr
+      - Sonarr:
+          href: https://sonarr.tail10187.ts.net
+          icon: sonarr
+      - Radarr:
+          href: https://radarr.tail10187.ts.net
+          icon: radarr
+      - Minio Console:
+          href: https://minio.tail10187.ts.net
+          icon: minio
+      - SyncThru:
+          href: http://192.168.86.48/sws/index.html
+          icon: printer
+    - Monitoring:
+      - Gatus:
+          href: https://gatus.tail10187.ts.net
+          icon: gatus
+          widget:
+            type: gatus
+            url: https://gatus.tail10187.ts.net
+      - Gatus Secondary:
+          href: https://gatus-secondary.tail10187.ts.net
+          icon: gatus
+          widget:
+            type: gatus
+            url: https://gatus-secondary.tail10187.ts.net
+      - Grafana:
+          href: https://grafana.tail10187.ts.net
+          icon: grafana
+      - Prometheus:
+          href: https://prometheus.tail10187.ts.net
+          icon: prometheus
+          widget:
+            type: prometheus
+            url: https://prometheus.tail10187.ts.net
+      - Grafana Cloud:
+          href: https://lorenzobaronio.grafana.net
+          icon: grafana
+  settings: |
+    title: Banzo Homelab
+    target: _blank
+    providers:
+    quicklaunch:
+      searchDescriptions: true
+      hideInternetSearch: true
+      showSearchSuggestions: false
+      hideVisitURL: true
+      provider: google # google, duckduckgo, bing, baidu, brave or custom
+    hideErrors: true
+    disableUpdateCheck: true
+  widgets: |
+    - datetime:
+      text_size: xl
+      locale: it
+      format:
+        dateStyle: long
+        timeStyle: long

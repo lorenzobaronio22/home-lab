@@ -1,0 +1,26 @@
+{
+  "extends": [
+    "config:recommended"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "commitMessagePrefix": "chore(deps): ",
+  "helm-values": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchFileNames": [
+        "99.apps/homepage/values.yaml"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/gethomepage/homepage"
+      ],
+      "groupName": "homepage image"
+    }
+  ]
+}
