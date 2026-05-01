@@ -28,6 +28,20 @@ updates:
       longhorn:
         patterns:
           - "longhorn"
+  - package-ecosystem: helm
+    directory: "/99.apps/gatus"
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "07:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      gatus:
+        patterns:
+          - "gatus"
   - package-ecosystem: github-actions
     directory: "/"
     target-branch: "main"

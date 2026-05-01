@@ -1,0 +1,106 @@
+name: Gatus Upgrade
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "99.apps/gatus/**"
+      - ".github/workflows/gatus-upgrade.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: gatus-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    name: Upgrade gatus on k3s
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      RELEASE_NAME: gatus
+      RELEASE_NAMESPACE: gatus
+      CHART_PATH: ./99.apps/gatus
+      GATUS_SECRET_NAME: gatus-secrets
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required secrets
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          for var in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET TELEGRAM_BOT_TOKEN TELEGRAM_CHAT_ID; do
+            if [ -z "${!var}" ]; then
+              echo "Missing required secret: $var" >&2
+              exit 1
+            fi
+          done
+
+      - name: Connect runner to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Configure kubeconfig
+        run: |
+          tailscale configure kubeconfig tailscale-operator
+
+      - name: Validate cluster access
+        run: kubectl get nodes
+
+      - name: Update chart dependencies
+        run: helm dependency update "$CHART_PATH"
+
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace "$RELEASE_NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Sync runtime secrets
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          set -euo pipefail
+          kubectl -n "$RELEASE_NAMESPACE" create secret generic "$GATUS_SECRET_NAME" \
+            --from-literal=TELEGRAM_BOT_TOKEN="$TELEGRAM_BOT_TOKEN" \
+            --from-literal=TELEGRAM_CHAT_ID="$TELEGRAM_CHAT_ID" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Validate rendered manifests
+        run: |
+          helm template "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --values "$CHART_PATH/values.yaml" > /tmp/gatus-rendered.yaml
+
+      - name: Upgrade release
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --create-namespace \
+            --values "$CHART_PATH/values.yaml" \
+            --wait
+
+      - name: Verify deployment rollout
+        run: |
+          kubectl -n "$RELEASE_NAMESPACE" rollout status deployment/gatus --timeout=5m
+
+      - name: Verify namespace workloads
+        run: |
+          kubectl -n "$RELEASE_NAMESPACE" get pods
