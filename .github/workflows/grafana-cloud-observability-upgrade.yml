@@ -1,0 +1,135 @@
+name: Grafana Cloud Observability Upgrade
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "01.k3s-cluster/03.observability/grafana-cloud/**"
+      - ".github/workflows/grafana-cloud-observability-upgrade.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: grafana-cloud-observability-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    name: Upgrade grafana-cloud-observability on k3s
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    env:
+      RELEASE_NAME: grafana-cloud-observability
+      RELEASE_NAMESPACE: observability
+      CHART_PATH: ./01.k3s-cluster/03.observability/grafana-cloud
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required secrets
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          GRAFANA_CLOUD_API_KEY: ${{ secrets.GRAFANA_CLOUD_API_KEY }}
+          GRAFANA_CLOUD_METRICS_URL: ${{ secrets.GRAFANA_CLOUD_METRICS_URL }}
+          GRAFANA_CLOUD_METRICS_USERNAME: ${{ secrets.GRAFANA_CLOUD_METRICS_USERNAME }}
+          GRAFANA_CLOUD_LOGS_URL: ${{ secrets.GRAFANA_CLOUD_LOGS_URL }}
+          GRAFANA_CLOUD_LOGS_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOGS_USERNAME }}
+          GRAFANA_CLOUD_OTLP_URL: ${{ secrets.GRAFANA_CLOUD_OTLP_URL }}
+          GRAFANA_CLOUD_OTLP_USERNAME: ${{ secrets.GRAFANA_CLOUD_OTLP_USERNAME }}
+        run: |
+          set -euo pipefail
+          for var in \
+            TS_OAUTH_CLIENT_ID \
+            TS_OAUTH_SECRET \
+            GRAFANA_CLOUD_API_KEY \
+            GRAFANA_CLOUD_METRICS_URL \
+            GRAFANA_CLOUD_METRICS_USERNAME \
+            GRAFANA_CLOUD_LOGS_URL \
+            GRAFANA_CLOUD_LOGS_USERNAME \
+            GRAFANA_CLOUD_OTLP_URL \
+            GRAFANA_CLOUD_OTLP_USERNAME; do
+            if [ -z "${!var}" ]; then
+              echo "Missing required secret: $var" >&2
+              exit 1
+            fi
+          done
+
+      - name: Connect runner to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Install Helm
+        uses: azure/setup-helm@v5
+
+      - name: Configure kubeconfig
+        run: |
+          tailscale configure kubeconfig tailscale-operator
+
+      - name: Validate cluster access
+        run: kubectl get nodes
+
+      - name: Update chart dependencies
+        run: helm dependency update "$CHART_PATH"
+
+      - name: Validate rendered manifests
+        env:
+          GRAFANA_CLOUD_API_KEY: ${{ secrets.GRAFANA_CLOUD_API_KEY }}
+          GRAFANA_CLOUD_METRICS_URL: ${{ secrets.GRAFANA_CLOUD_METRICS_URL }}
+          GRAFANA_CLOUD_METRICS_USERNAME: ${{ secrets.GRAFANA_CLOUD_METRICS_USERNAME }}
+          GRAFANA_CLOUD_LOGS_URL: ${{ secrets.GRAFANA_CLOUD_LOGS_URL }}
+          GRAFANA_CLOUD_LOGS_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOGS_USERNAME }}
+          GRAFANA_CLOUD_OTLP_URL: ${{ secrets.GRAFANA_CLOUD_OTLP_URL }}
+          GRAFANA_CLOUD_OTLP_USERNAME: ${{ secrets.GRAFANA_CLOUD_OTLP_USERNAME }}
+        run: |
+          helm template "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --values "$CHART_PATH/values.yaml" \
+            --set-string k8s-monitoring.destinations.grafanaCloudMetrics.url="$GRAFANA_CLOUD_METRICS_URL" \
+            --set-string k8s-monitoring.destinations.grafanaCloudMetrics.auth.username="$GRAFANA_CLOUD_METRICS_USERNAME" \
+            --set-string k8s-monitoring.destinations.grafanaCloudMetrics.auth.password="$GRAFANA_CLOUD_API_KEY" \
+            --set-string k8s-monitoring.destinations.grafanaCloudLogs.url="$GRAFANA_CLOUD_LOGS_URL" \
+            --set-string k8s-monitoring.destinations.grafanaCloudLogs.auth.username="$GRAFANA_CLOUD_LOGS_USERNAME" \
+            --set-string k8s-monitoring.destinations.grafanaCloudLogs.auth.password="$GRAFANA_CLOUD_API_KEY" \
+            --set-string k8s-monitoring.destinations.grafanaCloudTraces.url="$GRAFANA_CLOUD_OTLP_URL" \
+            --set-string k8s-monitoring.destinations.grafanaCloudTraces.auth.username="$GRAFANA_CLOUD_OTLP_USERNAME" \
+            --set-string k8s-monitoring.destinations.grafanaCloudTraces.auth.password="$GRAFANA_CLOUD_API_KEY" \
+            > /tmp/grafana-cloud-observability-rendered.yaml
+
+      - name: Upgrade release
+        env:
+          GRAFANA_CLOUD_API_KEY: ${{ secrets.GRAFANA_CLOUD_API_KEY }}
+          GRAFANA_CLOUD_METRICS_URL: ${{ secrets.GRAFANA_CLOUD_METRICS_URL }}
+          GRAFANA_CLOUD_METRICS_USERNAME: ${{ secrets.GRAFANA_CLOUD_METRICS_USERNAME }}
+          GRAFANA_CLOUD_LOGS_URL: ${{ secrets.GRAFANA_CLOUD_LOGS_URL }}
+          GRAFANA_CLOUD_LOGS_USERNAME: ${{ secrets.GRAFANA_CLOUD_LOGS_USERNAME }}
+          GRAFANA_CLOUD_OTLP_URL: ${{ secrets.GRAFANA_CLOUD_OTLP_URL }}
+          GRAFANA_CLOUD_OTLP_USERNAME: ${{ secrets.GRAFANA_CLOUD_OTLP_USERNAME }}
+        run: |
+          set -euo pipefail
+          helm upgrade --install "$RELEASE_NAME" "$CHART_PATH" \
+            --namespace "$RELEASE_NAMESPACE" \
+            --create-namespace \
+            --values "$CHART_PATH/values.yaml" \
+            --set-string k8s-monitoring.destinations.grafanaCloudMetrics.url="$GRAFANA_CLOUD_METRICS_URL" \
+            --set-string k8s-monitoring.destinations.grafanaCloudMetrics.auth.username="$GRAFANA_CLOUD_METRICS_USERNAME" \
+            --set-string k8s-monitoring.destinations.grafanaCloudMetrics.auth.password="$GRAFANA_CLOUD_API_KEY" \
+            --set-string k8s-monitoring.destinations.grafanaCloudLogs.url="$GRAFANA_CLOUD_LOGS_URL" \
+            --set-string k8s-monitoring.destinations.grafanaCloudLogs.auth.username="$GRAFANA_CLOUD_LOGS_USERNAME" \
+            --set-string k8s-monitoring.destinations.grafanaCloudLogs.auth.password="$GRAFANA_CLOUD_API_KEY" \
+            --set-string k8s-monitoring.destinations.grafanaCloudTraces.url="$GRAFANA_CLOUD_OTLP_URL" \
+            --set-string k8s-monitoring.destinations.grafanaCloudTraces.auth.username="$GRAFANA_CLOUD_OTLP_USERNAME" \
+            --set-string k8s-monitoring.destinations.grafanaCloudTraces.auth.password="$GRAFANA_CLOUD_API_KEY" \
+            --wait
+
+      - name: Verify namespace workloads
+        run: |
+          kubectl -n "$RELEASE_NAMESPACE" get pods

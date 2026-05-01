@@ -20,8 +20,10 @@ Deploy components in the following order to ensure all dependencies are met:
    - Deploy Tailscale Operator first (all other components depend on this)
 3. **Storage** ([01.k3s-cluster/02.storage/](01.k3s-cluster/02.storage/)):
    - Deploy Longhorn after networking is ready
-4. **Applications** ([01.k3s-cluster/99.apps/](01.k3s-cluster/99.apps/)):
-   - Deploy any applications after both networking and storage are ready
+4. **Observability** ([01.k3s-cluster/03.observability/](01.k3s-cluster/03.observability/)):
+   - Deploy Grafana Cloud observability after networking and storage
+5. **Applications** ([01.k3s-cluster/99.apps/](01.k3s-cluster/99.apps/)):
+   - Deploy applications after networking, storage, and observability
 
 ### Key Components
 
@@ -36,6 +38,12 @@ Provides secure ingress and networking via Tailscale proxy groups. All cluster c
 Distributed block storage system for persistent volumes and automated backups.
 
 **Location**: [01.k3s-cluster/02.storage/longhorn](01.k3s-cluster/02.storage/longhorn)
+
+#### Grafana Cloud Observability
+
+Cloud-first observability stack for metrics, logs, traces, and alerting with free-tier safeguards.
+
+**Location**: [01.k3s-cluster/03.observability/grafana-cloud](01.k3s-cluster/03.observability/grafana-cloud)
 
 #### Applications
 
@@ -63,5 +71,6 @@ Automated deployment workflows apply changes to the k3s cluster when merged to `
 
 - [tailscale-operator-upgrade.yml](.github/workflows/tailscale-operator-upgrade.yml)
 - [longhorn-upgrade.yml](.github/workflows/longhorn-upgrade.yml)
+- [grafana-cloud-observability-upgrade.yml](.github/workflows/grafana-cloud-observability-upgrade.yml)
 - [homepage-upgrade.yml](.github/workflows/homepage-upgrade.yml)
 - [node-os-maintenance.yml](.github/workflows/node-os-maintenance.yml)

@@ -28,6 +28,20 @@ updates:
       longhorn:
         patterns:
           - "longhorn"
+  - package-ecosystem: helm
+    directory: "/01.k3s-cluster/03.observability/grafana-cloud"
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "07:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      grafana-k8s-monitoring:
+        patterns:
+          - "k8s-monitoring"
   - package-ecosystem: github-actions
     directory: "/"
     target-branch: "main"

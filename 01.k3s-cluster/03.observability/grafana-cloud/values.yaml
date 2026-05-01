@@ -1,0 +1,113 @@
+# Non-secret values for Grafana Cloud observability.
+# Runtime credentials and URLs are injected by CI or local Helm --set arguments.
+k8s-monitoring:
+  cluster:
+    name: homelab-k3s
+
+  destinations:
+    grafanaCloudMetrics:
+      type: prometheus
+      url: ""
+      auth:
+        type: basic
+        username: ""
+        password: ""
+    grafanaCloudLogs:
+      type: loki
+      url: ""
+      auth:
+        type: basic
+        username: ""
+        password: ""
+    grafanaCloudTraces:
+      type: otlp
+      protocol: grpc
+      url: ""
+      auth:
+        type: basic
+        username: ""
+        password: ""
+      metrics:
+        enabled: false
+      logs:
+        enabled: false
+      traces:
+        enabled: true
+
+  clusterMetrics:
+    enabled: true
+    collector: alloy-metrics
+
+  hostMetrics:
+    enabled: true
+    collector: alloy-metrics
+    linuxHosts:
+      enabled: true
+    windowsHosts:
+      enabled: false
+
+  clusterEvents:
+    enabled: true
+    collector: alloy-singleton
+
+  # Prefer API-based pod logs for simpler setup and narrower collection scope.
+  podLogsViaKubernetesApi:
+    enabled: true
+    collector: alloy-logs
+    namespaces:
+      - kube-system
+      - longhorn-system
+      - homepage
+      - tailscale
+    excludeNamespaces:
+      - kube-public
+      - kube-node-lease
+
+  # Keep traces available but low-touch. Instrument apps explicitly and sample in-app.
+  # Empty destinations = chart auto-assigns each signal to the right capable backend.
+  applicationObservability:
+    enabled: true
+    collector: alloy-singleton
+    destinations: []
+    receivers:
+      otlp:
+        grpc:
+          enabled: true
+        http:
+          enabled: true
+
+  collectors:
+    alloy-metrics:
+      presets: [clustered, statefulset]
+      alloy:
+        clustering:
+          enabled: true
+    alloy-singleton:
+      presets: [singleton]
+    alloy-logs:
+      presets: [clustered]
+      alloy:
+        clustering:
+          enabled: true
+
+  telemetryServices:
+    kube-state-metrics:
+      deploy: true
+    node-exporter:
+      deploy: true
+
+  # Explicitly disable high-cost features for home-lab free-tier posture.
+  autoInstrumentation:
+    enabled: false
+  costMetrics:
+    enabled: false
+  podLogsObjects:
+    enabled: false
+  podLogsViaLoki:
+    enabled: false
+  podLogsViaOpenTelemetry:
+    enabled: false
+  profiling:
+    enabled: false
+  prometheusOperatorObjects:
+    enabled: false
