@@ -1,0 +1,87 @@
+{
+  "uid": "homelab-namespace-app-health",
+  "title": "HomeLab - Namespace and App Health",
+  "tags": ["homelab", "applications", "kubernetes"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource_prometheus",
+        "type": "datasource",
+        "query": "prometheus"
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+        "query": "label_values(kube_pod_info, namespace)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {"selected": true, "text": "All", "value": ".*"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Unavailable Deployments",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(kube_deployment_status_replicas_unavailable{namespace=~\"$namespace\"}) or vector(0)"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "CrashLoopBackOff Pods",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(kube_pod_container_status_waiting_reason{namespace=~\"$namespace\",reason=\"CrashLoopBackOff\"}) or vector(0)"
+        }
+      ],
+      "gridPos": {"h": 4, "w": 8, "x": 8, "y": 0}
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "OOM Kills (rate)",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(container_oom_events_total{namespace=~\"$namespace\"}[15m])) or vector(0)"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 4}
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Top Restarting Containers",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "expr": "topk(10, sum by (namespace, pod, container) (increase(kube_pod_container_status_restarts_total{namespace=~\"$namespace\"}[6h])))"
+        }
+      ],
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 12}
+    }
+  ]
+}

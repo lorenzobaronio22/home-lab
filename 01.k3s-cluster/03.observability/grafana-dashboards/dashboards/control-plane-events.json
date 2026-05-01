@@ -1,0 +1,64 @@
+{
+  "uid": "homelab-control-plane-events",
+  "title": "HomeLab - Control Plane and Events",
+  "tags": ["homelab", "kubernetes", "control-plane"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource_prometheus",
+        "type": "datasource",
+        "query": "prometheus"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Failed Scheduling Events",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(kube_event_count{reason=\"FailedScheduling\"}[5m])) or sum(rate(kube_eventseries_events_total{reason=\"FailedScheduling\"}[5m])) or vector(0)"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Node Pressure Conditions",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (condition) (kube_node_status_condition{status=\"true\",condition=~\"MemoryPressure|DiskPressure|PIDPressure\"})"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Not Ready Nodes",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "expr": "kube_node_status_condition{condition=\"Ready\",status=\"false\"}"
+        }
+      ],
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8}
+    }
+  ]
+}

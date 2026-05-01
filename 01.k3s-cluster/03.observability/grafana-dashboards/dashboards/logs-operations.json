@@ -1,0 +1,73 @@
+{
+  "uid": "homelab-logs-operations",
+  "title": "HomeLab - Logs Operations",
+  "tags": ["homelab", "logs", "operations"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource_loki",
+        "type": "datasource",
+        "query": "loki"
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": {"type": "loki", "uid": "$datasource_loki"},
+        "query": "label_values(namespace)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {"selected": true, "text": "All", "value": ".*"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Error Log Lines/s",
+      "datasource": {"type": "loki", "uid": "$datasource_loki"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate({namespace=~\"$namespace\"} |~ \"(?i)(error|exception|fatal)\" [5m])) or vector(0)"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Warning Log Lines/s",
+      "datasource": {"type": "loki", "uid": "$datasource_loki"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate({namespace=~\"$namespace\"} |= \"warn\" [5m]))"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "id": 3,
+      "type": "logs",
+      "title": "Recent Error Logs",
+      "datasource": {"type": "loki", "uid": "$datasource_loki"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "{namespace=~\"$namespace\"} |~ \"(error|ERROR|exception|EXCEPTION|fatal|FATAL)\""
+        }
+      ],
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 8}
+    }
+  ]
+}

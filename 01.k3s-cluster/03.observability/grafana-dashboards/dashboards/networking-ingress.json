@@ -1,0 +1,74 @@
+{
+  "uid": "homelab-networking-ingress",
+  "title": "HomeLab - Networking and Ingress",
+  "tags": ["homelab", "networking", "ingress"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource_prometheus",
+        "type": "datasource",
+        "query": "prometheus"
+      },
+      {
+        "name": "namespace",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+        "query": "label_values(kube_pod_info, namespace)",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {"selected": true, "text": "All", "value": ".*"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Network Receive Bytes/s",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(container_network_receive_bytes_total{namespace=~\"$namespace\"}[5m]))"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Network Transmit Bytes/s",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(container_network_transmit_bytes_total{namespace=~\"$namespace\"}[5m]))"
+        }
+      ],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Ingress Pods Not Ready",
+      "datasource": {"type": "prometheus", "uid": "$datasource_prometheus"},
+      "targets": [
+        {
+          "refId": "A",
+          "instant": true,
+          "expr": "sum(kube_pod_status_ready{namespace=\"tailscale\",condition=\"true\"} == 0) or vector(0)"
+        }
+      ],
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8}
+    }
+  ]
+}
