@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "02.tailscale-operator/**"
+      - "01.k3s-cluster/01.networking/tailscale-operator/**"
       - ".github/workflows/tailscale-operator-upgrade.yml"
   workflow_dispatch:
 
@@ -23,7 +23,7 @@ jobs:
     env:
       RELEASE_NAME: tailscale-operator
       RELEASE_NAMESPACE: tailscale
-      CHART_PATH: ./02.tailscale-operator
+      CHART_PATH: ./01.k3s-cluster/01.networking/tailscale-operator
     steps:
       - name: Checkout
         uses: actions/checkout@v6

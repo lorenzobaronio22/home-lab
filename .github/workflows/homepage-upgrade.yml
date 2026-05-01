@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "99.apps/homepage/**"
+      - "01.k3s-cluster/99.apps/homepage/**"
       - ".github/workflows/homepage-upgrade.yml"
   workflow_dispatch:
 
@@ -23,7 +23,7 @@ jobs:
     env:
       RELEASE_NAME: homepage
       RELEASE_NAMESPACE: homepage
-      CHART_PATH: ./99.apps/homepage
+      CHART_PATH: ./01.k3s-cluster/99.apps/homepage
     steps:
       - name: Checkout
         uses: actions/checkout@v6

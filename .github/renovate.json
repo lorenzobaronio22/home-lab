@@ -15,7 +15,7 @@
         "helm-values"
       ],
       "matchFileNames": [
-        "99.apps/homepage/values.yaml"
+        "01.k3s-cluster/99.apps/homepage/values.yaml"
       ],
       "matchPackageNames": [
         "ghcr.io/gethomepage/homepage"

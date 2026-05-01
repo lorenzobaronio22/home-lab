@@ -9,29 +9,9 @@
 - `tailscale.yaml`: optional ProxyGroup manifest for ingress high availability.
 - `nginx-hello.yaml`: optional example service exposure.
 
-## Install or upgrade locally (manual)
-
-```bash
-helm repo add tailscale https://pkgs.tailscale.com/helmcharts
-helm repo update
-helm dependency update ./02.tailscale-operator
-export CLIENT_ID=<OAuth client ID>
-export CLIENT_SECRET=<OAuth client secret>
-helm upgrade \
-  --install \
-  tailscale-operator \
-  ./02.tailscale-operator \
-  --namespace=tailscale \
-  --create-namespace \
-  --values ./02.tailscale-operator/values.yaml \
-  --set-string tailscale-operator.oauth.clientId="$CLIENT_ID" \
-  --set-string tailscale-operator.oauth.clientSecret="$CLIENT_SECRET" \
-  --wait
-```
-
 ## Automatic updates with Dependabot
 
-Dependabot is configured in `.github/dependabot.yml` to watch `02.tailscale-operator/Chart.yaml`.
+Dependabot is configured in `.github/dependabot.yml` to watch `01.k3s-cluster/01.networking/tailscale-operator/Chart.yaml`.
 
 When a new `tailscale-operator` chart version is available, Dependabot opens a PR that bumps the version in `Chart.yaml`.
 
@@ -41,7 +21,7 @@ Workflow: `.github/workflows/tailscale-operator-upgrade.yml`
 
 Trigger:
 
-- Push to `main` with changes under `02.tailscale-operator/**`
+- Push to `main` with changes under `01.k3s-cluster/01.networking/tailscale-operator/**`
 - Manual run (`workflow_dispatch`)
 
 The workflow:

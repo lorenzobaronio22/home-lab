@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "03.longhorn/**"
+      - "01.k3s-cluster/02.storage/longhorn/**"
       - ".github/workflows/longhorn-upgrade.yml"
   workflow_dispatch:
 
@@ -23,8 +23,8 @@ jobs:
     env:
       RELEASE_NAME: longhorn
       RELEASE_NAMESPACE: longhorn-system
-      CHART_PATH: ./03.longhorn
-      CUSTOMIZATION_FILE: ./03.longhorn/longhorn.yaml
+      CHART_PATH: ./01.k3s-cluster/02.storage/longhorn
+      CUSTOMIZATION_FILE: ./01.k3s-cluster/02.storage/longhorn/longhorn.yaml
     steps:
       - name: Checkout
         uses: actions/checkout@v6

@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: helm
-    directory: "/02.tailscale-operator"
+    directory: "/01.k3s-cluster/01.networking/tailscale-operator"
     schedule:
       interval: weekly
       day: saturday
@@ -15,7 +15,7 @@ updates:
         patterns:
           - "tailscale-operator"
   - package-ecosystem: helm
-    directory: "/03.longhorn"
+    directory: "/01.k3s-cluster/02.storage/longhorn"
     schedule:
       interval: weekly
       day: saturday
