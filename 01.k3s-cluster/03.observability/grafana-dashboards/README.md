@@ -25,15 +25,13 @@ This folder stores Grafana Cloud dashboards and alerting artifacts under source 
 
 ## Deployment model
 
-Dashboards are synced by CI through Grafana HTTP API using `overwrite=true` and stable UIDs.
+Dashboards are synced by Grafana Cloud Git Sync. The connection is configured in the Grafana UI under **Administration → Git Sync**, pointing at:
 
-## Required GitHub secrets for CI sync
+- **Repository**: `lorenzobaronio22/home-lab`
+- **Branch**: `main`
+- **Path**: `01.k3s-cluster/03.observability/grafana-dashboards/dashboards`
 
-- `TS_OAUTH_CLIENT_ID`
-- `TS_OAUTH_SECRET`
-- `GRAFANA_CLOUD_STACK_URL` (example: `https://<stack>.grafana.net`)
-- `GRAFANA_CLOUD_DASHBOARDS_API_TOKEN` (Grafana service account token)
-- `GRAFANA_CLOUD_FOLDER_UID_HOME_LAB` (target Grafana folder UID)
+No GitHub Actions workflow or repository secrets are required for dashboard sync.
 
 ## Local JSON validation quick check
 

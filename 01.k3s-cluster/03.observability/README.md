@@ -5,7 +5,7 @@ This folder contains observability infrastructure components deployed to the k3s
 ## Components
 
 - **grafana-cloud**: Grafana Cloud observability (metrics, logs, traces, alerting) using the Kubernetes Monitoring Helm chart.
-- **grafana-dashboards**: Source-controlled Grafana dashboards and alert artifacts, synced via GitHub Actions.
+- **grafana-dashboards**: Source-controlled Grafana dashboards and alert artifacts, synced via Grafana Cloud Git Sync.
 
 ## Deployment Order
 
@@ -22,4 +22,5 @@ Deploy observability after networking and storage are available.
 
 - Dashboard JSON models live in `01.k3s-cluster/03.observability/grafana-dashboards/dashboards/`.
 - Alert artifacts live in `01.k3s-cluster/03.observability/grafana-dashboards/alerts/`.
-- CI sync workflow: `.github/workflows/grafana-cloud-dashboards-sync.yml`.
+- Dashboards are synced by Grafana Cloud Git Sync (configured in the Grafana UI under Administration → Git Sync).
+- Alert rules are not yet covered by Git Sync; manage them directly in Grafana Cloud until native support is available.

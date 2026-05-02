@@ -68,13 +68,6 @@ helm upgrade \
 - `GRAFANA_CLOUD_OTLP_URL`
 - `GRAFANA_CLOUD_OTLP_USERNAME`
 
-Additional secrets for dashboard and alert artifact sync (`.github/workflows/grafana-cloud-dashboards-sync.yml`):
-
-- `GRAFANA_CLOUD_STACK_URL`
-- `GRAFANA_CLOUD_DASHBOARDS_API_TOKEN`
-- `GRAFANA_CLOUD_FOLDER_UID_HOME_LAB`
-- `GRAFANA_CLOUD_PROMETHEUS_DS_UID`
-- `GRAFANA_CLOUD_LOKI_DS_UID`
 
 ## Verify installation
 
