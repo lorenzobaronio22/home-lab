@@ -9,7 +9,7 @@ configuration
 
 ## 01 - k3s cluster
 
-A high-availability k3s Kubernetes cluster with Tailscale networking, Longhorn distributed storage, and application deployments.
+A single-node k3s Kubernetes cluster with Tailscale networking, Longhorn persistent storage, and application deployments.
 
 ### Deployment Order
 
