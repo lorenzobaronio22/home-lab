@@ -1,0 +1,23 @@
+image:
+  repository: amir20/dozzle
+  tag: v8.11.4
+  pullPolicy: Always
+
+replicaCount: 1
+
+serviceAccount:
+  name: dozzle
+
+service:
+  port: 8080
+
+ingress:
+  enabled: true
+  className: tailscale
+  annotations:
+    tailscale.com/proxy-group: private-ingress-proxies
+  hosts:
+    - dozzle
+
+persistence:
+  size: 1Gi

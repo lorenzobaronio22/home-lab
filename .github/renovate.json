@@ -21,6 +21,18 @@
         "ghcr.io/gethomepage/homepage"
       ],
       "groupName": "homepage image"
+    },
+    {
+      "matchManagers": [
+        "helm-values"
+      ],
+      "matchFileNames": [
+        "01.k3s-cluster/03.observability/dozzle/values.yaml"
+      ],
+      "matchPackageNames": [
+        "amir20/dozzle"
+      ],
+      "groupName": "dozzle image"
     }
   ]
 }
