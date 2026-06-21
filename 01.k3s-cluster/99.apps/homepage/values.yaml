@@ -119,6 +119,9 @@ config:
       - Longhorn k3s Cluster Dashboard:
           href: https://longhorn.tail10187.ts.net
           icon: longhorn
+      - Dozzle k3s Cluster Dashboard:
+          href: https://dozzle.tail10187.ts.net
+          icon: dozzle
     - Public Services:
       - Im Learning Lab:
           href: https://lab.im-learning.app
