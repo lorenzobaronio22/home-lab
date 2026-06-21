@@ -26,7 +26,7 @@ jobs:
       SERVER_HOST: lebron
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Validate required secrets
         env:

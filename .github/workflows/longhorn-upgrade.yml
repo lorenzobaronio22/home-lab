@@ -27,7 +27,7 @@ jobs:
       CUSTOMIZATION_FILE: ./01.k3s-cluster/02.storage/longhorn/longhorn.yaml
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Validate required secrets
         env:
