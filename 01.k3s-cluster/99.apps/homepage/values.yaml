@@ -191,15 +191,6 @@ config:
           widget:
             type: gatus
             url: https://gatus-secondary.tail10187.ts.net
-      - Grafana:
-          href: https://grafana.tail10187.ts.net
-          icon: grafana
-      - Prometheus:
-          href: https://prometheus.tail10187.ts.net
-          icon: prometheus
-          widget:
-            type: prometheus
-            url: https://prometheus.tail10187.ts.net
       - Grafana Cloud:
           href: https://lorenzobaronio.grafana.net
           icon: grafana
