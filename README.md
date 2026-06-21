@@ -4,8 +4,7 @@ My home lab setup.
 
 ## Documentation
 
-See individual component READMEs for detailed instructions
-configuration
+See individual component READMEs for detailed instructions and configuration.
 
 ## 01 - k3s cluster
 
@@ -51,21 +50,32 @@ Deployed services and applications running on the cluster.
 
 **Location**: [01.k3s-cluster/99.apps/](01.k3s-cluster/99.apps/)
 
-### Automatic Updates
+## 02 - Docker Host
 
-#### Dependabot
+A dedicated Docker host running networking components (Cloudflare Tunnel + Tailscale) for standalone containerized services.
+
+### Deployment Order
+
+Deploy components in the following order:
+
+1. **Networking** ([02.docker-host/01.networking/](02.docker-host/01.networking/)):
+   - Deploy Cloudflare Tunnel + Tailscale first (all other services depend on this).
+
+## Automatic Updates
+
+### Dependabot
 
 Watches Helm chart dependencies and opens PRs when updates are available.
 
 Configuration: [.github/dependabot.yml](.github/dependabot.yml)
 
-#### Renovate
+### Renovate
 
 Scans for dependency updates and image version changes.
 
 Configuration: [.github/renovate.json](.github/renovate.json)
 
-#### GitHub Workflows
+### GitHub Workflows
 
 Automated deployment workflows apply changes to the k3s cluster when merged to `main`.
 
