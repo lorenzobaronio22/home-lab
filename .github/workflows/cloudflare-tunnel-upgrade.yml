@@ -1,0 +1,95 @@
+name: Cloudflare Tunnel Upgrade
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "02.docker-host/**"
+      - ".github/workflows/cloudflare-tunnel-upgrade.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-tunnel-upgrade
+  cancel-in-progress: false
+
+jobs:
+  upgrade:
+    name: Upgrade cloudflare tunnel on docker host
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      DEPLOY_PATH: /opt/cloudflare-tunnel
+      SERVER_USER: ubuntu
+      SERVER_HOST: lebron
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate required secrets
+        env:
+          TS_OAUTH_CLIENT_ID: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+        run: |
+          set -euo pipefail
+          for var in TS_OAUTH_CLIENT_ID TS_OAUTH_SECRET CLOUDFLARE_TOKEN TS_AUTHKEY; do
+            if [ -z "${!var}" ]; then
+              echo "Missing required secret: $var" >&2
+              exit 1
+            fi
+          done
+
+      - name: Connect runner to tailnet
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Validate server access
+        run: |
+          set -euo pipefail
+          tailscale ssh "${SERVER_USER}@${SERVER_HOST}" -- hostname
+
+      - name: Prepare deploy directory
+        run: |
+          set -euo pipefail
+          tailscale ssh "${SERVER_USER}@${SERVER_HOST}" -- "mkdir -p ${DEPLOY_PATH}"
+
+      - name: Create .env file from .env.example
+        env:
+          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          TS_AUTHKEY: ${{ secrets.TS_AUTHKEY }}
+        run: |
+          set -euo pipefail
+          sed \
+            -e "s|__CLOUDFLARE_TOKEN__|${CLOUDFLARE_TOKEN}|" \
+            -e "s|__TS_AUTHKEY__|${TS_AUTHKEY}|" \
+            02.docker-host/01.networking/.env.example > 02.docker-host/01.networking/.env
+
+      - name: Validate compose manifest
+        run: |
+          set -euo pipefail
+          cd 02.docker-host/01.networking && docker compose config
+
+      - name: Deploy .env file to server
+        run: |
+          set -euo pipefail
+          cat 02.docker-host/01.networking/.env \
+            | tailscale ssh "${SERVER_USER}@${SERVER_HOST}" -- "cat > ${DEPLOY_PATH}/.env"
+
+      - name: Deploy compose.yml to server
+        run: |
+          set -euo pipefail
+          cat 02.docker-host/01.networking/compose.yml \
+            | tailscale ssh "${SERVER_USER}@${SERVER_HOST}" -- "cat > ${DEPLOY_PATH}/compose.yml"
+
+      - name: Deploy stack
+        run: |
+          set -euo pipefail
+          tailscale ssh "${SERVER_USER}@${SERVER_HOST}" -- \
+            "cd ${DEPLOY_PATH} && docker compose up -d --force-recreate --pull always --wait"

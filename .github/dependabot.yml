@@ -57,3 +57,17 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: docker-compose
+    directory: "/02.docker-host/01.networking"
+    schedule:
+      interval: weekly
+      day: saturday
+      time: "07:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      cloudflare-tunnel:
+        patterns:
+          - "*"
