@@ -61,6 +61,12 @@ Deploy components in the following order:
 1. **Networking** ([02.docker-host/01.networking/](02.docker-host/01.networking/)):
    - Deploy Cloudflare Tunnel + Tailscale first (all other services depend on this).
 
+## 03 - Second k3s cluster
+
+A second single-node k3s Kubernetes cluster (`oci`), isolated from `01.k3s-cluster`. Currently bootstrap-only.
+
+**Location**: [03.k3s-cluster/](03.k3s-cluster/)
+
 ## Automatic Updates
 
 ### Dependabot
