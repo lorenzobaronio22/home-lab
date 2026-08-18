@@ -57,7 +57,6 @@ k8s-monitoring:
     namespaces:
       - kube-system
       - longhorn-system
-      - homepage
       - tailscale
     excludeNamespaces:
       - kube-public
