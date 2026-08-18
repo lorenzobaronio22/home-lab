@@ -52,7 +52,7 @@ helm upgrade \
 
 ## Free-tier defaults in `values.yaml`
 
-- Pod logs are limited to `kube-system`, `longhorn-system`, and `homepage` namespaces.
+- Pod logs are limited to `kube-system`, `longhorn-system`, and `tailscale` namespaces.
 - High-cost features stay disabled by default: profiling, cost metrics, auto-instrumentation, broad pod-log modes.
 - Tracing is enabled only as receiver infrastructure. You decide app-by-app instrumentation.
 
