@@ -35,3 +35,9 @@ ssh root@luka "kubectl get nodes && kubectl get pods -A"
 ```
 
 Expect `luka` as a `Ready` node and the control-plane pods running.
+
+## Networking
+
+Once the cluster is up, deploy the Tailscale Operator before any other components. It provides the `tailscale` ingress class used by storage and application manifests, and its API server proxy (`tailscale-operator-oci`) is what the automatic-update workflow uses to reach this cluster.
+
+See [01.networking/README.md](01.networking/README.md) for details and the manual first-time install steps.
