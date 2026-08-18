@@ -1,0 +1,8 @@
+tailscale-operator:
+  oauth:
+    clientId: ""
+    clientSecret: ""
+  apiServerProxyConfig:
+    mode: "true"
+  operatorConfig:
+    hostname: "tailscale-operator-oci"

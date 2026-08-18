@@ -63,9 +63,23 @@ Deploy components in the following order:
 
 ## 03 - Second k3s cluster
 
-A second single-node k3s Kubernetes cluster (`oci`), isolated from `01.k3s-cluster`. Currently bootstrap-only.
+A second single-node k3s Kubernetes cluster (`oci`), isolated from `01.k3s-cluster`. Hosted on an Oracle Cloud Infrastructure VM (`luka`) and reached over Tailscale.
 
-**Location**: [03.k3s-cluster/](03.k3s-cluster/)
+### Deployment Order
+
+Deploy components in the following order to ensure all dependencies are met:
+
+1. **Cluster Setup**: Follow the bootstrap steps in [03.k3s-cluster/README.md](03.k3s-cluster/README.md)
+2. **Networking** ([03.k3s-cluster/01.networking/](03.k3s-cluster/01.networking/)):
+   - Deploy Tailscale Operator first (all other components depend on this)
+
+### Key Components
+
+#### Tailscale Operator (Networking)
+
+Provides secure ingress and networking via Tailscale proxy groups. The operator registers as `tailscale-operator-oci` on the tailnet so it does not clash with the `01.k3s-cluster` operator.
+
+**Location**: [03.k3s-cluster/01.networking/tailscale-operator](03.k3s-cluster/01.networking/tailscale-operator)
 
 ## Automatic Updates
 
@@ -86,6 +100,7 @@ Configuration: [.github/renovate.json](.github/renovate.json)
 Automated deployment workflows apply changes to the k3s cluster when merged to `main`.
 
 - [tailscale-operator-upgrade.yml](.github/workflows/tailscale-operator-upgrade.yml)
+- [tailscale-operator-oci-upgrade.yml](.github/workflows/tailscale-operator-oci-upgrade.yml)
 - [longhorn-upgrade.yml](.github/workflows/longhorn-upgrade.yml)
 - [grafana-cloud-observability-upgrade.yml](.github/workflows/grafana-cloud-observability-upgrade.yml)
 - [homepage-upgrade.yml](.github/workflows/homepage-upgrade.yml)
