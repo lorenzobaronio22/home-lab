@@ -4,7 +4,7 @@ A self-hosted application dashboard providing a centralized view of services and
 
 ## Deployment Strategy
 
-Deployed as a Helm chart on the `oci` k3s cluster. The ingress uses the `tailscale` class through the `private-ingress-proxies` ProxyGroup, so it serves on the same `homepage` tailnet hostname previously used from `01.k3s-cluster`.
+Deployed as a Helm chart on the `oci` k3s cluster. The ingress uses the `tailscale` class through the `private-ingress-proxies` ProxyGroup and serves on the `homepage` tailnet hostname.
 
 ## Installation
 
