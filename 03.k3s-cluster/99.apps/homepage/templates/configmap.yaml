@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage
+  labels:
+    app.kubernetes.io/name: homepage
+data:
+  bookmarks.yaml: |
+{{ .Values.config.bookmarks | indent 4 }}
+  custom.css: |
+{{ .Values.config.customCss | indent 4 }}
+  custom.js: |
+{{ .Values.config.customJs | indent 4 }}
+  docker.yaml: |
+{{ .Values.config.docker | indent 4 }}
+  kubernetes.yaml: |
+{{ .Values.config.kubernetes | indent 4 }}
+  proxmox.yaml: |
+{{ .Values.config.proxmox | indent 4 }}
+  services.yaml: |
+{{ .Values.config.services | indent 4 }}
+  settings.yaml: |
+{{ .Values.config.settings | indent 4 }}
+  widgets.yaml: |
+{{ .Values.config.widgets | indent 4 }}

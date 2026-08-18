@@ -21,8 +21,6 @@ Deploy components in the following order to ensure all dependencies are met:
    - Deploy Longhorn after networking is ready
 4. **Observability** ([01.k3s-cluster/03.observability/](01.k3s-cluster/03.observability/)):
    - Deploy Grafana Cloud observability after networking and storage
-5. **Applications** ([01.k3s-cluster/99.apps/](01.k3s-cluster/99.apps/)):
-   - Deploy applications after networking, storage, and observability
 
 ### Key Components
 
@@ -43,12 +41,6 @@ Distributed block storage system for persistent volumes and automated backups.
 Cloud-first observability stack for metrics, logs, traces, and alerting with free-tier safeguards.
 
 **Location**: [01.k3s-cluster/03.observability/grafana-cloud](01.k3s-cluster/03.observability/grafana-cloud)
-
-#### Applications
-
-Deployed services and applications running on the cluster.
-
-**Location**: [01.k3s-cluster/99.apps/](01.k3s-cluster/99.apps/)
 
 ## 02 - Docker Host
 
@@ -72,6 +64,8 @@ Deploy components in the following order to ensure all dependencies are met:
 1. **Cluster Setup**: Follow the bootstrap steps in [03.k3s-cluster/README.md](03.k3s-cluster/README.md)
 2. **Networking** ([03.k3s-cluster/01.networking/](03.k3s-cluster/01.networking/)):
    - Deploy Tailscale Operator first (all other components depend on this)
+3. **Applications** ([03.k3s-cluster/99.apps/](03.k3s-cluster/99.apps/)):
+   - Deploy the Homepage dashboard after networking is ready
 
 ### Key Components
 
@@ -80,6 +74,12 @@ Deploy components in the following order to ensure all dependencies are met:
 Provides secure ingress and networking via Tailscale proxy groups. The operator registers as `tailscale-operator-oci` on the tailnet so it does not clash with the `01.k3s-cluster` operator.
 
 **Location**: [03.k3s-cluster/01.networking/tailscale-operator](03.k3s-cluster/01.networking/tailscale-operator)
+
+#### Homepage (Application)
+
+Self-hosted application dashboard accessing the homelab over the tailnet.
+
+**Location**: [03.k3s-cluster/99.apps/homepage](03.k3s-cluster/99.apps/homepage)
 
 ## Automatic Updates
 
@@ -103,5 +103,5 @@ Automated deployment workflows apply changes to the k3s cluster when merged to `
 - [tailscale-operator-oci-upgrade.yml](.github/workflows/tailscale-operator-oci-upgrade.yml)
 - [longhorn-upgrade.yml](.github/workflows/longhorn-upgrade.yml)
 - [grafana-cloud-observability-upgrade.yml](.github/workflows/grafana-cloud-observability-upgrade.yml)
-- [homepage-upgrade.yml](.github/workflows/homepage-upgrade.yml)
+- [homepage-oci-upgrade.yml](.github/workflows/homepage-oci-upgrade.yml)
 - [node-os-maintenance.yml](.github/workflows/node-os-maintenance.yml)
