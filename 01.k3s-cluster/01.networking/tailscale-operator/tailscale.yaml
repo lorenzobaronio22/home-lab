@@ -1,9 +1,0 @@
-apiVersion: tailscale.com/v1alpha1
-kind: ProxyGroup
-metadata:
-  name: private-ingress-proxies
-  namespace: tailscale
-spec:
-  type: ingress
-  tags:
-    - tag:k8s

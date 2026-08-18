@@ -1,3 +1,0 @@
-# Non-secret values for the Longhorn dependency chart.
-# Keep this file small and explicit for home-lab maintainability.
-longhorn: {}
