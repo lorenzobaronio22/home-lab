@@ -15,7 +15,7 @@ services:
       retries: 3
       start_period: 10s
   tailscale-cloudflare-tunnel:
-    image: tailscale/tailscale:v1.102.2
+    image: tailscale/tailscale:v1.102.3
     container_name: tailscale-cloudflare-tunnel
     hostname: cloudflare-tunnel
     environment:
