@@ -16,11 +16,14 @@ Data is **not** expected to survive VM rebuilds — it is rebuilt from backups.
 |---|---|
 | `../02.cert-manager/` | cert-manager (prerequisite of the barman plugin TLS) |
 | `cnpg-operator/` | CloudNativePG operator (`cnpg-system`) |
-| `barman-plugin/` | Barman Cloud plugin + `ObjectStore` pointing at OCI S3 |
-| `cluster/` | The `Cluster` CR + nightly `ScheduledBackup` |
-| `pgweb/` | pgweb web client, exposed on the tailnet at `pgweb.tail10187.ts.net` |
+| `barman-plugin/` | Barman Cloud plugin HelmRelease (`cnpg-system`) |
+| `workload/objectstore.yaml` | `ObjectStore` CR pointing at OCI S3 |
+| `workload/cluster/` | The `Cluster` CR + nightly `ScheduledBackup` |
+| `workload/pgweb/` | pgweb web client, exposed on the tailnet at `pgweb.tail10187.ts.net` |
 
-Flux order: `networking → cert-manager → databases → apps`.
+Flux order: `networking → cert-manager → databases → postgres → apps`.
+The `databases` Kustomization installs the operator + plugin (creating the
+CRDs); the `postgres` Kustomization applies the CRs that use them.
 
 ## One-time OCI setup
 

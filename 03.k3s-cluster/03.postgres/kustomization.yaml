@@ -3,8 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - cnpg-operator
+  # HelmRelease only. The ObjectStore CR lives in workload/: its CRD is
+  # created by this chart, and kustomize-controller's upfront dry-run would
+  # reject the whole Kustomization if the CR were applied here too early.
   - barman-plugin
-  # Cluster CRDs come from cnpg-operator above; if they are not ready yet,
-  # kustomize-controller simply retries until the release is up.
-  - cluster
-  - pgweb

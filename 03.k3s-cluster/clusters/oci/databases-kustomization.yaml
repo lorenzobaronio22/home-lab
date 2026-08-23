@@ -18,6 +18,8 @@ spec:
   prune: true
   wait: true
 ---
+# Operator + barman plugin. Installing these charts creates the CRDs used by
+# the "postgres" Kustomization below.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -31,6 +33,34 @@ spec:
   retryInterval: 1m
   timeout: 5m
   path: 03.k3s-cluster/03.postgres
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: cloudnative-pg
+      namespace: cnpg-system
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: plugin-barman-cloud
+      namespace: cnpg-system
+---
+# ObjectStore + Cluster + pgweb. Must wait for the CRDs above to exist.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: postgres
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: databases
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: 03.k3s-cluster/03.postgres/workload
   sourceRef:
     kind: GitRepository
     name: flux-system

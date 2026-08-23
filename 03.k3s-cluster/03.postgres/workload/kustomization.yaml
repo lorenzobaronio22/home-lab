@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # Applied by the separate "postgres" Flux Kustomization, after the
+  # operator + plugin charts above have installed their CRDs.
+  - objectstore.yaml
+  - cluster
+  - pgweb
