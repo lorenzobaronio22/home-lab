@@ -39,10 +39,12 @@ spec:
                 secretKeyRef:
                   name: postgres-superuser
                   key: password
+          # NB: --listen is the web UI port; --port is the DATABASE port.
           args:
             - --bind=0.0.0.0
-            - --port=8080
+            - --listen=8080
             - --host=$(PGHOST)
+            - --port=$(PGPORT)
             - --db=$(PGDATABASE)
             - --user=$(PGUSER)
             - --pass=$(PGPASSWORD)
