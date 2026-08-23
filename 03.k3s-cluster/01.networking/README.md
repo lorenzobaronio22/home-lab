@@ -4,8 +4,10 @@ This folder contains networking infrastructure components deployed to the `oci` 
 
 ## Components
 
-- **tailscale-operator**: Secure ingress and networking via Tailscale proxy groups.
+- **tailscale-operator**: Secure ingress and networking via Tailscale proxy groups. Deployed by Flux
+  as a `HelmRelease` pinned to the upstream chart (`https://pkgs.tailscale.com/helmcharts`).
 
 ## Deployment Order
 
-Tailscale Operator should be deployed before any other cluster components, as it provides the ingress class (`tailscale`) used by application manifests.
+Flux enforces this automatically: the cluster-level `apps` Kustomization declares
+`dependsOn: networking`, so applications are only deployed once networking is healthy.

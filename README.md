@@ -23,13 +23,8 @@ A single-node k3s Kubernetes cluster (`oci`), hosted on an Oracle Cloud Infrastr
 
 ### Deployment Order
 
-Deploy components in the following order to ensure all dependencies are met:
-
 1. **Cluster Setup**: Follow the bootstrap steps in [03.k3s-cluster/README.md](03.k3s-cluster/README.md)
-2. **Networking** ([03.k3s-cluster/01.networking/](03.k3s-cluster/01.networking/)):
-   - Deploy Tailscale Operator first (all other components depend on this)
-3. **Applications** ([03.k3s-cluster/99.apps/](03.k3s-cluster/99.apps/)):
-   - Deploy the Homepage dashboard after networking is ready
+2. **Everything else**: Flux reconciles networking first, then applications (`dependsOn` ordering)
 
 ### Key Components
 
@@ -47,23 +42,25 @@ Self-hosted application dashboard accessing the homelab over the tailnet.
 
 ## Automatic Updates
 
+### GitOps (Flux)
+
+The k3s cluster is reconciled by [Flux](https://fluxcd.io) from this repository. Merging to `main`
+is the only action needed to change the cluster — see the
+[cluster runbook](03.k3s-cluster/README.md) for bootstrap, rebuild and update semantics.
+
 ### Dependabot
 
-Watches Helm chart dependencies and opens PRs when updates are available.
+Watches GitHub Actions and docker-compose dependencies and opens PRs when updates are available.
 
 Configuration: [.github/dependabot.yml](.github/dependabot.yml)
 
 ### Renovate
 
-Scans for dependency updates and image version changes.
+Scans for dependency updates: Flux `HelmRelease` chart versions and container image tags.
 
 Configuration: [.github/renovate.json](.github/renovate.json)
 
 ### GitHub Workflows
 
-Automated deployment workflows apply changes to the k3s cluster when merged to `main`.
-
-- [tailscale-operator-oci-upgrade.yml](.github/workflows/tailscale-operator-oci-upgrade.yml)
-- [homepage-oci-upgrade.yml](.github/workflows/homepage-oci-upgrade.yml)
-- [cloudflare-tunnel-upgrade.yml](.github/workflows/cloudflare-tunnel-upgrade.yml)
+- [cloudflare-tunnel-upgrade.yml](.github/workflows/cloudflare-tunnel-upgrade.yml) (docker host)
 - [renovate.yml](.github/workflows/renovate.yml)
