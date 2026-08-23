@@ -1,0 +1,22 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homepage
+  namespace: homepage
+spec:
+  interval: 30m
+  retryInterval: 1m
+  timeout: 10m
+  releaseName: homepage
+  targetNamespace: homepage
+  storageNamespace: homepage
+  install:
+    createNamespace: true
+  chart:
+    spec:
+      chart: ./99.apps/homepage
+      sourceRef:
+        kind: GitRepository
+        name: flux-system
+        namespace: flux-system
+      interval: 1h

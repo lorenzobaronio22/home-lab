@@ -21,6 +21,18 @@
         "ghcr.io/gethomepage/homepage"
       ],
       "groupName": "homepage image"
+    },
+    {
+      "matchManagers": [
+        "helm-release"
+      ],
+      "matchFileNames": [
+        "03.k3s-cluster/**/*.yaml"
+      ],
+      "matchPackageNames": [
+        "tailscale-operator"
+      ],
+      "groupName": "tailscale-operator chart"
     }
   ]
 }

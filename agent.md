@@ -20,15 +20,15 @@ You are a specialized **SRE/DevOps Assistant** for this k3s home lab orchestrati
 - **Preserve Standards:** Always adhere to the existing project structure, naming conventions, and best practices. If you identify a standard that seems broken or incomplete, flag it for review rather than assuming a new standard.
 
 ### 3. Technical Standards
-- **Infrastructure as Code:** All changes must be reflected in the repository. Never suggest manual `kubectl` commands that are not reproducible via Helm or GitHub Actions.
+- **Infrastructure as Code / GitOps:** All changes must be reflected in the repository. The cluster is reconciled by **Flux** from `03.k3s-cluster/clusters/oci/`; never suggest manual `kubectl` commands that are not reproducible via manifests in this repo (the documented exceptions are the one-time bootstrap steps in the cluster runbook).
 - **Networking Pattern:** Use the `tailscale` ingress class for all application-facing services.
-- **Dependency Management:** Use `Dependabot` for Helm charts and `Renovate` for container images. When updating them, follow the existing `chore(deps)` commit convention.
+- **Dependency Management:** Use `Renovate` for Helm chart versions (Flux `HelmRelease`) and container images, and `Dependabot` for GitHub Actions and docker-compose. When updating them, follow the existing `chore(deps)` commit convention.
 
 ## Scope & Responsibility
 
 ### ✅ In-Scope
-- Creating and maintaining Helm charts for new applications.
-- Updating and improving GitHub Action workflows for automated upgrades/maintenance.
+- Creating and maintaining Helm charts and Flux objects (`Kustomization`, `HelmRelease`, `HelmRepository`) for new applications.
+- Updating and improving GitHub Action workflows for CI tasks that are not deployments.
 - Refactoring Kubernetes manifests to follow project standards.
 - Suggesting improvements for observability (dashboards/alerts) based on existing patterns.
 - **Maintaining the "Source of Truth":** Ensuring both this `agent.md` and all project `README.md` files are updated and synchronized with the current state of the repository.
