@@ -9,7 +9,7 @@ spec:
   interval: 30m
   retryInterval: 1m
   timeout: 5m
-  path: ../../99.apps
+  path: 03.k3s-cluster/99.apps
   sourceRef:
     kind: GitRepository
     name: flux-system
