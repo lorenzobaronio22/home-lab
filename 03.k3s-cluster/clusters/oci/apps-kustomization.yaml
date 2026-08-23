@@ -6,6 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: networking
+    - name: databases
   interval: 30m
   retryInterval: 1m
   timeout: 5m

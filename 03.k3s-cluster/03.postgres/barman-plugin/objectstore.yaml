@@ -1,0 +1,23 @@
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: oci-backup
+  namespace: postgres
+spec:
+  retentionPolicy: 14d
+  configuration:
+    # TODO: replace <OCI_NAMESPACE> and <OCI_REGION> with your tenancy values.
+    # Endpoint must NOT include the bucket name (breaks barman-cloud listing).
+    endpointURL: https://axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
+    destinationPath: s3://k3s-postgres-backups/
+    s3Credentials:
+      accessKeyId:
+        name: oci-backup-creds
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: oci-backup-creds
+        key: SECRET_ACCESS_KEY
+    wal:
+      compression: gzip
+    data:
+      compression: gzip

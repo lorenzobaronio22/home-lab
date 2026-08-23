@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - cnpg-operator
+  - barman-plugin
+  # Cluster CRDs come from cnpg-operator above; if they are not ready yet,
+  # kustomize-controller simply retries until the release is up.
+  - cluster
+  - pgweb
