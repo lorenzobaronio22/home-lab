@@ -24,7 +24,7 @@ kubectl -n tailscale create secret generic tailscale-operator-oauth \
 ```
 
 This is a documented one-time step in the [rebuild runbook](../../README.md). If the Secret is
-missing the HelmRelease reports an error and retries every minute until it exists.
+missing the HelmRelease reports an error and retries on its next reconcile interval until it exists.
 
 ## Automatic updates
 

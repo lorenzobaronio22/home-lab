@@ -105,7 +105,7 @@ kubectl get pods -A
 
 First reconciliation takes a few minutes: Flux applies networking first (the `apps` Kustomization has
 `dependsOn: networking`), then applications. The Tailscale Operator's HelmRelease will error until the
-OAuth Secret from Step 4 exists — Flux retries every minute, no action needed beyond fixing the cause.
+OAuth Secret from Step 4 exists — Flux retries on each reconcile interval, no action needed beyond fixing the cause.
 
 ### Step 7: Clean Up Temporary Access
 

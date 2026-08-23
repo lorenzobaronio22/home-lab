@@ -5,7 +5,6 @@ metadata:
   namespace: tailscale
 spec:
   interval: 30m
-  retryInterval: 1m
   timeout: 10m
   releaseName: tailscale-operator
   targetNamespace: tailscale
