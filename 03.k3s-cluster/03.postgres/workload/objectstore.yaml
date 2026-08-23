@@ -5,9 +5,17 @@ metadata:
   namespace: postgres
 spec:
   retentionPolicy: 14d
+  instanceSidecarConfiguration:
+    env:
+      - name: AWS_REQUEST_CHECKSUM_CALCULATION
+        value: when_required
+      - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+        value: when_required
+      # boto needs a region; us-east-1 works for any OCI region because the
+      # endpointURL selects it.
+      - name: AWS_REGION
+        value: us-east-1
   configuration:
-    # TODO: replace <OCI_NAMESPACE> and <OCI_REGION> with your tenancy values.
-    # Endpoint must NOT include the bucket name (breaks barman-cloud listing).
     endpointURL: https://axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
     destinationPath: s3://k3s-postgres-backups/
     s3Credentials:

@@ -24,9 +24,3 @@ spec:
         kind: HelmRepository
         name: cloudnative-pg
       interval: 1h
-  values:
-    additionalEnv:
-      # OCI S3 Compatibility API: boto needs a region. us-east-1 works for any
-      # region as long as endpointURL points at the right one.
-      - name: AWS_REGION
-        value: us-east-1

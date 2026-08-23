@@ -6,6 +6,9 @@ metadata:
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:17
   instances: 1
+  # Generate the <name>-superuser Secret (postgres/postgres superuser creds);
+  # consumed by the pgweb client below.
+  enableSuperuserAccess: true
   storage:
     size: 10Gi
     storageClass: local-path
