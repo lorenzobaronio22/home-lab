@@ -13,7 +13,7 @@ spec:
     createNamespace: true
   chart:
     spec:
-      chart: ./99.apps/homepage
+      chart: ./03.k3s-cluster/99.apps/homepage
       sourceRef:
         kind: GitRepository
         name: flux-system
