@@ -24,6 +24,18 @@
     },
     {
       "matchManagers": [
+        "helm-values"
+      ],
+      "matchFileNames": [
+        "03.k3s-cluster/01.networking/cloudflared/values.yaml"
+      ],
+      "matchPackageNames": [
+        "cloudflare/cloudflared"
+      ],
+      "groupName": "cloudflared image"
+    },
+    {
+      "matchManagers": [
         "helm-release"
       ],
       "matchFileNames": [

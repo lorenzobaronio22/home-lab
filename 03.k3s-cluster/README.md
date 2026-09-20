@@ -70,6 +70,12 @@ kubectl create namespace tailscale
 kubectl -n tailscale create secret generic tailscale-operator-oauth \
   --from-literal=client-id="$TS_OPERATOR_OAUTH_CLIENT_ID" \
   --from-literal=client-secret="$TS_OPERATOR_OAUTH_CLIENT_SECRET"
+
+# Cloudflare Tunnel token for the cluster's tunnel (remote tunnel, no sidecar).
+# Token from Zero Trust dashboard: Networking → Tunnels → your tunnel → Configure → token.
+kubectl create namespace cloudflared
+kubectl -n cloudflared create secret generic cloudflared-tunnel-token \
+  --from-literal=token="$CLOUDFLARE_CLUSTER_TUNNEL_TOKEN"
 ```
 
 ### Step 5: Bootstrap Flux
@@ -104,8 +110,9 @@ kubectl get pods -A
 ```
 
 First reconciliation takes a few minutes: Flux applies networking first (the `apps` Kustomization has
-`dependsOn: networking`), then applications. The Tailscale Operator's HelmRelease will error until the
-OAuth Secret from Step 4 exists — Flux retries on each reconcile interval, no action needed beyond fixing the cause.
+`dependsOn: networking`), then applications. The Tailscale Operator's and cloudflared's HelmReleases will
+error until the Secrets from Step 4 exist — Flux retries on each reconcile interval, no action needed
+beyond fixing the cause.
 
 ### Step 7: Clean Up Temporary Access
 
