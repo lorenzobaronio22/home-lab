@@ -51,7 +51,6 @@ Use any *other* name (the CR defaults to `keycloak-admin`). If you previously
 pre-created `keycloak-initial-admin`, rename it:
 
 ```bash
-kubectl -n keycloak label secret keycloak-initial-admin app.kubernetes.io/managed-by=Hand
 kubectl -n keycloak get secret keycloak-initial-admin -o yaml \
   | sed 's/name: keycloak-initial-admin/name: keycloak-admin/' | kubectl apply -f -
 kubectl -n keycloak delete secret keycloak-initial-admin
