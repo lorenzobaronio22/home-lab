@@ -41,7 +41,12 @@ kubectl -n keycloak create secret generic keycloak-admin \
 ```
 
 The `postgres` Secret is consumed by the CNPG `DatabaseRole` CR and must be
-`kubernetes.io/basic-auth` with both `username` and `password` keys.
+`kubernetes.io/basic-auth` with both `username` and `password` keys. It is the
+**authoritative password**: CNPG syncs the DB role's password from it. The
+`keycloak`-ns `keycloak-db-credentials` must use the **same password** (Keycloak
+logs `FATAL: password authentication failed for user "keycloak"` on mismatch).
+After changing either one, restart the pod so the StatefulSet mount picks it up:
+`kubectl -n keycloak delete pod keycloak-0`.
 
 The admin Secret name **must not** be `keycloak-initial-admin` — that is the
 name the operator itself generates when no custom admin secret is configured;
