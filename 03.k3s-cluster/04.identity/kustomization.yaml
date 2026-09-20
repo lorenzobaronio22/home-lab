@@ -3,7 +3,11 @@ kind: Kustomization
 resources:
   # Upstream operator manifest kustomization does not emit the namespace, so it
   # is created here. Only the operator package is applied synchronously (its
-  # CRDs are required by ./keycloak, which is rendered by its own Flux
-  # Kustomization).
+  # CRDs are required by ./keycloak, rendered by its own Flux Kustomization).
   - namespace.yaml
   - ./keycloak-operator
+  # The "keycloak" Flux Kustomization OBJECT only (single file) — it must NOT
+  # render ./keycloak's CRs here, they require the operator CRDs. The object
+  # dependsOn keycloak-operator, so Flux renders the CR path only after the
+  # operator (and its CRDs) is ready.
+  - ./keycloak/flux-kustomization.yaml

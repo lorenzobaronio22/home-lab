@@ -25,3 +25,14 @@ spec:
       kind: Deployment
       name: keycloak-operator
       namespace: keycloak
+  patches:
+    - target:
+        kind: Deployment
+        name: keycloak-operator
+      patch: |
+        - op: replace
+          path: /spec/template/spec/containers/0/resources/requests/cpu
+          value: 10m
+        - op: replace
+          path: /spec/template/spec/containers/0/resources/requests/memory
+          value: 128Mi

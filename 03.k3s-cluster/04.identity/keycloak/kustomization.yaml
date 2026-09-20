@@ -1,6 +1,10 @@
+# This folder is the source for the "keycloak" Flux Kustomization (see
+# flux-kustomization.yaml, wired in by ../kustomization.yaml). Only the CRs are
+# rendered here; the flux-kustomization.yaml object itself is applied by the
+# parent 04.identity/ apply once its CRDs exist, so it must NOT be listed here
+# (that would make the Kustomization own its own controller object).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - keycloak.yaml
   - ingress.yaml
-  - flux-kustomization.yaml

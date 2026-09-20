@@ -1,7 +1,8 @@
 # Renders the Keycloak CR + ingress once the operator (and its CRDs) are
-# installed by the "keycloak-operator" Kustomization. Note: this Kustomization
-# must not be included in the top-level 04.identity/ resources — its target CRs
-# depend on CRDs that only exist after keycloak-operator converges.
+# installed by the "keycloak-operator" Kustomization. This object is applied by
+# the parent 04.identity/ apply (single-file include) and is NOT listed in
+# keycloak/kustomization.yaml so the Kustomization does not manage itself.
+# It renders 03.k3s-cluster/04.identity/keycloak (CRs only).
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
