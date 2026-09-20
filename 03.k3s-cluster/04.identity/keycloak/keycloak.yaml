@@ -2,7 +2,7 @@
 # TLS is terminated at the Tailscale edge, so Keycloak serves plain HTTP
 # internally and trusts the X-Forwarded-* headers written by Tailscale.
 # Secrets are created out-of-band (cluster runbook Step 4): keycloak-db-credentials
-# (username/password) and keycloak-initial-admin (username/password).
+# (username/password) and keycloak-admin (username/password).
 apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
@@ -33,7 +33,11 @@ spec:
     enabled: false
   bootstrapAdmin:
     user:
-      secret: keycloak-initial-admin
+      # Must NOT be "keycloak-initial-admin": that is the name the operator
+      # itself generates when no custom secret is configured, so pointing here
+      # makes it try to create a colliding secret (409 AlreadyExists). Any other
+      # name is honored as the pre-existing admin credentials secret.
+      secret: keycloak-admin
   resources:
     requests:
       cpu: 10m

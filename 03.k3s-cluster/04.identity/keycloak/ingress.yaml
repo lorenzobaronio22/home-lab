@@ -22,8 +22,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                # Operator-created service: "<cr>-service" on the HTTP container
-                # port (8080). There is no service named "keycloak".
                 name: keycloak-service
                 port:
                   number: 8080

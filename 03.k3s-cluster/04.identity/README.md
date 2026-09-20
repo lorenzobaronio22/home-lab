@@ -36,12 +36,26 @@ kubectl -n postgres create secret generic keycloak-db-credentials \
   --from-literal=username=keycloak --from-literal=password='...'
 kubectl -n keycloak create secret generic keycloak-db-credentials \
   --from-literal=username=keycloak --from-literal=password='...'
-kubectl -n keycloak create secret generic keycloak-initial-admin \
+kubectl -n keycloak create secret generic keycloak-admin \
   --from-literal=username=admin --from-literal=password='...'
 ```
 
 The `postgres` Secret is consumed by the CNPG `DatabaseRole` CR and must be
 `kubernetes.io/basic-auth` with both `username` and `password` keys.
+
+The admin Secret name **must not** be `keycloak-initial-admin` — that is the
+name the operator itself generates when no custom admin secret is configured;
+pointing `bootstrapAdmin.user.secret` at it makes the operator try to create a
+colliding Secret and fail with `409 AlreadyExists` (StatefulSet never created).
+Use any *other* name (the CR defaults to `keycloak-admin`). If you previously
+pre-created `keycloak-initial-admin`, rename it:
+
+```bash
+kubectl -n keycloak label secret keycloak-initial-admin app.kubernetes.io/managed-by=Hand
+kubectl -n keycloak get secret keycloak-initial-admin -o yaml \
+  | sed 's/name: keycloak-initial-admin/name: keycloak-admin/' | kubectl apply -f -
+kubectl -n keycloak delete secret keycloak-initial-admin
+```
 
 Until they exist, the `postgres` deploy of the DB role and the Keycloak CR
 report unready and Flux retries (same pattern as `cloudflared`).
@@ -59,6 +73,6 @@ report unready and Flux retries (same pattern as `cloudflared`).
 ## Day-2
 
 - Admin console: `https://keycloak.tail10187.ts.net/admin` (credentials from the
-  `keycloak-initial-admin` Secret).
+  `keycloak-admin` Secret).
 - Change the initial password and enable MFA for the admin user before treating
   it as production.
