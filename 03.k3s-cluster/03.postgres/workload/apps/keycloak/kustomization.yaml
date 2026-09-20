@@ -3,4 +3,4 @@ kind: Kustomization
 namespace: postgres
 resources:
   - database.yaml
-  - role.yaml
+  - databaserole.yaml

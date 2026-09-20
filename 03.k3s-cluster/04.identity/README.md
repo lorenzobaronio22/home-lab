@@ -32,12 +32,16 @@ operator install).
 
 ```bash
 kubectl -n postgres create secret generic keycloak-db-credentials \
-  --from-literal=password='...'
+  --type=kubernetes.io/basic-auth \
+  --from-literal=username=keycloak --from-literal=password='...'
 kubectl -n keycloak create secret generic keycloak-db-credentials \
   --from-literal=username=keycloak --from-literal=password='...'
 kubectl -n keycloak create secret generic keycloak-initial-admin \
   --from-literal=username=admin --from-literal=password='...'
 ```
+
+The `postgres` Secret is consumed by the CNPG `DatabaseRole` CR and must be
+`kubernetes.io/basic-auth` with both `username` and `password` keys.
 
 Until they exist, the `postgres` deploy of the DB role and the Keycloak CR
 report unready and Flux retries (same pattern as `cloudflared`).

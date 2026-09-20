@@ -112,24 +112,28 @@ metadata:
   name: keycloak
   namespace: postgres
 spec:
-  clusterRef:
+  cluster:
     name: postgres
   name: keycloak
-  owner: keycloak        # role is created declaratively too
+  owner: keycloak        # role managed declaratively by the DatabaseRole below
 ---
 apiVersion: postgresql.cnpg.io/v1
-kind: Role
+kind: DatabaseRole
 metadata:
   name: keycloak
   namespace: postgres
 spec:
-  clusterRef:
+  cluster:
     name: postgres
   name: keycloak
   login: true
   passwordSecret:
     name: keycloak-db-credentials
 ```
+
+The role's Secret must be `kubernetes.io/basic-auth` type and hold both a
+`username` and a `password` field (the operator restores/updates the role's
+password from it on every reconciliation).
 
 Then create the password Secret and point the app at:
 
@@ -140,6 +144,6 @@ postgres-rw.postgres.svc.cluster.local:5432/keycloak
 with credentials from the app's Secret.
 
 > **Live:** Keycloak uses this exact setup — `workload/apps/keycloak/` holds the
-> `Database` + `Role` CRs; create the `keycloak-db-credentials` Secret in
-> `postgres` (and a copy in `keycloak`) per the cluster runbook before expecting
-> reconciliation to green.
+> `Database` + `DatabaseRole` CRs; create the `keycloak-db-credentials` Secret
+> in `postgres` (basic-auth, `username` + `password`) and a copy in `keycloak`
+> per the cluster runbook before expecting reconciliation to green.

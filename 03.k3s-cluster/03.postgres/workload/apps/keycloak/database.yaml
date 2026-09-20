@@ -3,7 +3,7 @@ kind: Database
 metadata:
   name: keycloak
 spec:
-  clusterRef:
+  cluster:
     name: postgres
   name: keycloak
   owner: keycloak
