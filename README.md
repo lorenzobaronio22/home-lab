@@ -24,7 +24,7 @@ A single-node k3s Kubernetes cluster (`oci`), hosted on an Oracle Cloud Infrastr
 ### Deployment Order
 
 1. **Cluster Setup**: Follow the bootstrap steps in [03.k3s-cluster/README.md](03.k3s-cluster/README.md)
-2. **Everything else**: Flux reconciles networking first, then applications (`dependsOn` ordering)
+2. **Everything else**: Flux reconciles in order — networking → databases → postgres → identity → apps (`dependsOn` ordering)
 
 ### Key Components
 
@@ -39,6 +39,15 @@ Provides secure ingress and networking via Tailscale proxy groups. The operator 
 Self-hosted application dashboard accessing the homelab over the tailnet.
 
 **Location**: [03.k3s-cluster/99.apps/homepage](03.k3s-cluster/99.apps/homepage)
+
+#### Keycloak (Identity)
+
+Production-ready Keycloak 27 (official operator) on the shared CloudNativePG
+cluster, exposed over the tailnet at `keycloak.tail10187.ts.net`. The operator
+is updated by a pinned `Gitrepository` tag that Renovate bumps in lockstep with
+the Keycloak server image.
+
+**Location**: [03.k3s-cluster/04.identity](03.k3s-cluster/04.identity)
 
 ## Automatic Updates
 

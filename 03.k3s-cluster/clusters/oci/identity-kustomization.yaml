@@ -1,0 +1,30 @@
+---
+# Identity platform layer: installs the Keycloak operator (gitrepo -> upstream
+# manifests) and, once its CRDs exist, the Keycloak CR + ingress. Order:
+# postgres (DB schema/role) -> keycloak-operator -> keycloak.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: identity
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: postgres
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: 03.k3s-cluster/04.identity
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      name: keycloak-operator
+      namespace: flux-system
+    - apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      name: keycloak
+      namespace: flux-system

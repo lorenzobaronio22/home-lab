@@ -78,6 +78,22 @@ kubectl -n cloudflared create secret generic cloudflared-tunnel-token \
   --from-literal=token="$CLOUDFLARE_CLUSTER_TUNNEL_TOKEN"
 ```
 
+Keycloak secrets (also out-of-band; the CNPG `Role` and the `Keycloak` CR
+reference them and retry until they exist). The DB password is shared between
+the copy in `postgres` (CNPG role) and the copy in `keycloak` (Keycloak CR);
+
+```bash
+kubectl create namespace keycloak
+kubectl -n postgres create secret generic keycloak-db-credentials \
+  --from-literal=password="$KEYCLOAK_DB_PASSWORD"
+kubectl -n keycloak create secret generic keycloak-db-credentials \
+  --from-literal=username=keycloak \
+  --from-literal=password="$KEYCLOAK_DB_PASSWORD"
+kubectl -n keycloak create secret generic keycloak-initial-admin \
+  --from-literal=username=admin \
+  --from-literal=password="$KEYCLOAK_ADMIN_PASSWORD"
+```
+
 ### Step 5: Bootstrap Flux
 
 Requires the `flux` CLI locally ([install](https://fluxcd.io/flux/installation/)) and a GitHub PAT with
@@ -104,15 +120,18 @@ from all configuration afterwards.
 ### Step 6: Watch Reconciliation
 
 ```bash
-flux get kustomizations --watch     # networking → apps, in order
+flux get kustomizations --watch     # networking → databases → postgres → identity → apps
 flux get helmreleases -A            # tailscale-operator, homepage
+flux get sources gitrepository -A   # external repos, incl. keycloak-k8s-resources
 kubectl get pods -A
+kubectl get keycloak -n keycloak    # READY True once operator + secrets are in place
 ```
 
 First reconciliation takes a few minutes: Flux applies networking first (the `apps` Kustomization has
 `dependsOn: networking`), then applications. The Tailscale Operator's and cloudflared's HelmReleases will
 error until the Secrets from Step 4 exist — Flux retries on each reconcile interval, no action needed
-beyond fixing the cause.
+beyond fixing the cause. Same for Keycloak: the `postgres` and `keycloak` Kustomizations retry until the
+Step 4 secrets exist.
 
 ### Step 7: Clean Up Temporary Access
 
@@ -139,10 +158,19 @@ bumps arrive as ordinary PRs against the pinned `version:` fields.
 ├── clusters/oci/
 │   ├── flux-system/                    # Flux controllers (committed by bootstrap)
 │   ├── networking-kustomization.yaml   # → ../../01.networking
-│   └── apps-kustomization.yaml         # → ../../99.apps (dependsOn networking)
+│   ├── databases-kustomization.yaml    # → ../../02.cert-manager + ../../03.postgres
+│   ├── identity-kustomization.yaml     # → ../../04.identity (dependsOn postgres)
+│   └── apps-kustomization.yaml         # → ../../99.apps (dependsOn networking + databases)
 ├── 01.networking/
 │   ├── kustomization.yaml
 │   └── tailscale-operator/             # HelmRepository + HelmRelease + ProxyGroup
+├── 02.cert-manager/
+├── 03.postgres/
+│   ├── cnpg-operator/ + barman-plugin/ # Charts creating the CNPG CRDs
+│   └── workload/                       # ObjectStore, Cluster, pgweb, apps/<db-per-app>
+├── 04.identity/
+│   ├── keycloak-operator/              # GitRepository + Kustomization (upstream manifests)
+│   └── keycloak/                       # Keycloak CR + Ingress
 └── 99.apps/
     ├── kustomization.yaml
     └── homepage/                       # local chart + HelmRelease

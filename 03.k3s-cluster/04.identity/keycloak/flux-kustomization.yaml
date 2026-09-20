@@ -1,0 +1,27 @@
+# Renders the Keycloak CR + ingress once the operator (and its CRDs) are
+# installed by the "keycloak-operator" Kustomization. Note: this Kustomization
+# must not be included in the top-level 04.identity/ resources — its target CRs
+# depend on CRDs that only exist after keycloak-operator converges.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: keycloak
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: keycloak-operator
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: 03.k3s-cluster/04.identity/keycloak
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: k8s.keycloak.org/v2beta1
+      kind: Keycloak
+      name: keycloak
+      namespace: keycloak

@@ -1,0 +1,27 @@
+# Applies the upstream Keycloak operator manifests from the pinned
+# GitRepository tag. The upstream kustomization (kubernetes/) installs the
+# operator into the "keycloak" namespace and ships its CRDs, so the
+# "keycloak" Kustomization below must wait for this one to be ready.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: keycloak-operator
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: postgres
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: kubernetes
+  sourceRef:
+    kind: GitRepository
+    name: keycloak-k8s-resources
+    namespace: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: keycloak-operator
+      namespace: keycloak

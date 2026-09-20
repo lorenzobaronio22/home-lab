@@ -6,3 +6,5 @@ resources:
   - objectstore.yaml
   - cluster
   - pgweb
+  # Per-app databases + roles (Keycloak, ...) live in ./apps.
+  - apps/keycloak

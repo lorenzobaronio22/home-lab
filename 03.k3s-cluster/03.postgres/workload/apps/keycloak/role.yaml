@@ -1,0 +1,11 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Role
+metadata:
+  name: keycloak
+spec:
+  clusterRef:
+    name: postgres
+  name: keycloak
+  login: true
+  passwordSecret:
+    name: keycloak-db-credentials

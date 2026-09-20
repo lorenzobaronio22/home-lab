@@ -102,7 +102,8 @@ The pgweb client (superuser credentials preloaded from the
 
 ### Adding a database
 
-Each app gets its own database + user, declared in git. Example for Keycloak:
+Each app gets its own database + user, declared in git. Example for Keycloak
+(thereafter the real CRs live in `workload/apps/keycloak/`):
 
 ```yaml
 apiVersion: postgresql.cnpg.io/v1
@@ -137,3 +138,8 @@ postgres-rw.postgres.svc.cluster.local:5432/keycloak
 ```
 
 with credentials from the app's Secret.
+
+> **Live:** Keycloak uses this exact setup — `workload/apps/keycloak/` holds the
+> `Database` + `Role` CRs; create the `keycloak-db-credentials` Secret in
+> `postgres` (and a copy in `keycloak`) per the cluster runbook before expecting
+> reconciliation to green.

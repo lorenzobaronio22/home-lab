@@ -1,0 +1,27 @@
+# Tailscale ingress: the operator's own Ingress is disabled (spec.ingress.enabled:
+# false in keycloak.yaml) because it cannot express Tailscale's short-host
+# convention; this one wires host "keycloak" -> keycloak.tail10187.ts.net.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  namespace: keycloak
+  labels:
+    app.kubernetes.io/name: keycloak
+  annotations:
+    tailscale.com/proxy-group: private-ingress-proxies
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+        - keycloak
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak
+                port:
+                  number: 8080

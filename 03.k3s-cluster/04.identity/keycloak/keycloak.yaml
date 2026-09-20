@@ -1,0 +1,46 @@
+# Production-ready Keycloak 27 backed by the CloudNativePG "postgres" cluster.
+# TLS is terminated at the Tailscale edge, so Keycloak serves plain HTTP
+# internally and trusts the X-Forwarded-* headers written by Tailscale.
+# Secrets are created out-of-band (cluster runbook Step 4): keycloak-db-credentials
+# (username/password) and keycloak-initial-admin (username/password).
+apiVersion: k8s.keycloak.org/v2beta1
+kind: Keycloak
+metadata:
+  name: keycloak
+  namespace: keycloak
+  labels:
+    app.kubernetes.io/name: keycloak
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-rw.postgres.svc.cluster.local
+    database: keycloak
+    usernameSecret:
+      name: keycloak-db-credentials
+      key: username
+    passwordSecret:
+      name: keycloak-db-credentials
+      key: password
+  http:
+    httpEnabled: true
+  hostname:
+    hostname: keycloak.tail10187.ts.net
+    strict: true
+  proxy:
+    headers: xforwarded
+  ingress:
+    enabled: false
+  bootstrapAdmin:
+    user:
+      secret: keycloak-initial-admin
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  readinessProbe:
+    failureThreshold: 3
+    periodSeconds: 10

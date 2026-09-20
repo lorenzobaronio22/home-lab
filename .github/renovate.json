@@ -45,6 +45,15 @@
         "tailscale-operator"
       ],
       "groupName": "tailscale-operator chart"
+    },
+    {
+      "matchManagers": [
+        "flux"
+      ],
+      "matchPackageNames": [
+        "keycloak/keycloak-k8s-resources"
+      ],
+      "groupName": "keycloak operator"
     }
   ]
 }
