@@ -7,6 +7,18 @@ This folder contains networking infrastructure components for the Docker host.
 - **cloudflared**: Cloudflare Tunnel agent, sharing the Tailscale node's network namespace.
 - **tailscale**: Tailscale node providing the host's tailnet identity and WireGuard transport.
 
+The tunnel token (`CLOUDFLARE_TOKEN`) must be **distinct** from the k3s cluster tunnel token.
+Sharing the same token registers both cloudflared instances as connectors of one tunnel, and
+Cloudflare load-balances requests across them — a connector picked for an origin it can't resolve
+(cluster-only `*.svc.cluster.local`, or docker/tailnet-only names) answers `502`. Each tunnel keeps
+only the origins its connector can actually reach:
+
+- **Docker-host tunnel (this file)** — docker-container and tailnet origins: `gemgarden.org`,
+  `im-learning.app` (+`www`, `lab`), `notes.lorenzobaronio.com` (docmost), `vault.lorenzobaronio.com`
+  (vaultwarden), `media.lorenzobaronio.com` (jellyfin on the tailnet).
+- **Cluster tunnel (`03.k3s-cluster/01.networking/cloudflared`)** — only the two
+  `auth.lorenzobaronio.com` Keycloak routes (`/realms/*`, `/resources/*` → the k3s Service).
+
 ## Deployment Order
 
 Deploy Cloudflare Tunnel and Tailscale before any other services on this host.
