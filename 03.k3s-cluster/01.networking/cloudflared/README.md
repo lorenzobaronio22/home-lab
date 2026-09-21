@@ -30,3 +30,18 @@ Until the Secret exists the HelmRelease errors; Flux retries on each reconcile i
 - **Image version**: Renovate watches `values.yaml` (`tag:` field) and opens PRs.
 
 Routes are managed in the Cloudflare Zero Trust dashboard (Networking → Tunnels), not in this repo.
+
+## Current public hostname routes
+
+Applied to the cluster tunnel as Public Hostname entries in the dashboard. Path
+matching follows cloudflared's top-down ingress rules; the full request path is
+forwarded to the origin and non-matching paths fall through to the catch-all
+(404), so only the listed paths are exposed:
+
+| Hostname | Path | Service |
+|---|---|---|
+| `auth.lorenzobaronio.com` | `/realms/*` | `http://keycloak-service.keycloak.svc.cluster.local:8080` |
+| `auth.lorenzobaronio.com` | `/resources/*` | `http://keycloak-service.keycloak.svc.cluster.local:8080` |
+
+These expose Keycloak's OIDC + theme endpoints publicly; the admin console and
+everything else stay tailnet-only (see `04.identity/README.md`).

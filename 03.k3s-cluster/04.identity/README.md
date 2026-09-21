@@ -3,8 +3,13 @@
 Single-instance Keycloak 27 managed by the official
 [Keycloak Operator](https://www.keycloak.org/operator/installation). Data lives
 in the shared CloudNativePG cluster (see `03.postgres/`); TLS is terminated at
-the Tailscale edge, so Keycloak runs plain HTTP internally. Exposed only on the
-tailnet at `keycloak.tail10187.ts.net` (MagicDNS).
+the proxies, so Keycloak runs plain HTTP internally.
+Exposure:
+- **Tailnet** (MagicDNS): full instance at `https://keycloak.tail10187.ts.net`
+  incl. the admin console at `/admin`.
+- **Public** (Cloudflare Tunnel): only the OIDC/theme paths at
+  `https://auth.lorenzobaronio.com` - `/realms/*` and `/resources/*` (see
+  `01.networking/cloudflared/README.md`). Everything else on the host is 404.
 
 ## Layout
 
@@ -22,10 +27,14 @@ operator install).
 - **Operator, not a Helm chart**: the Keycloak project ships no Helm chart; the
   operator + pinned kustomize manifests is the supported path and matches the
   CNPG/Tailscale-operator GitOps pattern here.
-- **Tailscale edge TLS** (`http.httpEnabled`, `proxy.headers: xforwarded`,
-  fixed `hostname`): the operator's own Ingress is disabled because it can't
+- **Proxy edge TLS, dynamic hostname** (`http.httpEnabled`,
+  `proxy.headers: xforwarded`, **no** fixed `hostname`, `hostname.strict: false`):
+  Keycloak derives each request's URLs from the proxies' `X-Forwarded-*` headers,
+  so the tailnet host and the public tunnel host both issue correct
+  issuer/redirect URLs. The operator's own Ingress is disabled because it can't
   express Tailscale's short-host convention; the Ingress in this folder wires
-  `keycloak` → `keycloak.tail10187.ts.net`.
+  `keycloak` → `keycloak.tail10187.ts.net`. Header-derived hostname is fine here
+  because only the trusted proxies (Tailscale, Cloudflare) can set those headers.
 - **No PV**: Keycloak is stateless; Barman already backs up its schema.
 
 ## Secrets (one-time, out-of-band)

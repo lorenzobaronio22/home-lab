@@ -43,9 +43,11 @@ Self-hosted application dashboard accessing the homelab over the tailnet.
 #### Keycloak (Identity)
 
 Production-ready Keycloak 27 (official operator) on the shared CloudNativePG
-cluster, exposed over the tailnet at `keycloak.tail10187.ts.net`. The operator
-is updated by a pinned `Gitrepository` tag that Renovate bumps in lockstep with
-the Keycloak server image.
+cluster. Full instance (incl. admin console) on the tailnet at
+`keycloak.tail10187.ts.net`; OIDC `/realms/*` + `/resources/*` only are exposed
+publicly at `auth.lorenzobaronio.com` via the cluster's Cloudflare Tunnel. The
+operator is updated by a pinned `Gitrepository` tag that Renovate bumps in
+lockstep with the Keycloak server image.
 
 **Location**: [03.k3s-cluster/04.identity](03.k3s-cluster/04.identity)
 
