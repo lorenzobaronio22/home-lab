@@ -171,10 +171,20 @@ bumps arrive as ordinary PRs against the pinned `version:` fields.
 ├── 04.identity/
 │   ├── keycloak-operator/              # GitRepository + Kustomization (upstream manifests)
 │   └── keycloak/                       # Keycloak CR + Ingress
+├── 05.mariadb/
+│   ├── operator/                       # mariadb-operator + crds charts
+│   └── cluster/                        # shared MariaDB CR + PhysicalBackup + apps/<db-per-site>
+├── 06.gemgarden-wordpress/             # WordPress deployment, no ingress (Cloudflare Tunnel origin)
 └── 99.apps/
     ├── kustomization.yaml
     └── homepage/                       # local chart + HelmRelease
 ```
+
+Flux reconciliation order (chain of `Kustomization` `dependsOn`):
+`networking → cert-manager → databases → postgres → identity → mariadb →
+gemgarden-wordpress → apps`. The `mariadb` health check blocks
+`gemgarden-wordpress` until the shared MariaDB has bootstrapped from its S3
+dump, so a site never starts against an empty DB.
 
 Note: this intentionally keeps manifests near their component folders rather than adopting Flux's
 canonical `apps/`+`infrastructure/` layout — fine at homelab scale.

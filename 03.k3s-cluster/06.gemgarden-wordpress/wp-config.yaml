@@ -1,0 +1,52 @@
+# wp-config.php delivered as a ConfigMap (mounted over the generated one).
+# TLS is terminated at the Cloudflare edge, so PHP's HTTPS detection must come
+# from the proxy's X-Forwarded-Proto header - without this WordPress serves
+# mixed-content and wrong canonical links behind the tunnel.
+# DB credentials and salts are NOT stored here: they are read from container
+# environment variables sourced from the gemgarden-wp-credentials Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gemgarden-wp-config
+data:
+  wp-config.php: |
+    <?php
+    /**
+     * Deployed via GitOps - config delivered as a ConfigMap (see
+     * 06.gemgarden-wordpress/README.md). Credentials and salts are read from
+     * the pod environment, injected from the gemgarden-wp-credentials Secret.
+     */
+
+    // Cloudflare terminates TLS at the edge; reflect that to PHP so WP issues
+    // https:// URLs and secure cookies.
+    if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['REQUEST_SCHEME'] = 'https';
+    }
+
+    define('DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress');
+    define('DB_USER', getenv('WORDPRESS_DB_USER') ?: '');
+    define('DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: '');
+    define('DB_HOST', getenv('WORDPRESS_DB_HOST') ?: 'localhost');
+    define('DB_CHARSET', 'utf8mb4');
+    define('DB_COLLATE', '');
+
+    define('AUTH_KEY', getenv('WORDPRESS_AUTH_KEY') ?: '');
+    define('SECURE_AUTH_KEY', getenv('WORDPRESS_SECURE_AUTH_KEY') ?: '');
+    define('LOGGED_IN_KEY', getenv('WORDPRESS_LOGGED_IN_KEY') ?: '');
+    define('NONCE_KEY', getenv('WORDPRESS_NONCE_KEY') ?: '');
+    define('AUTH_SALT', getenv('WORDPRESS_AUTH_SALT') ?: '');
+    define('SECURE_AUTH_SALT', getenv('WORDPRESS_SECURE_AUTH_SALT') ?: '');
+    define('LOGGED_IN_SALT', getenv('WORDPRESS_LOGGED_IN_SALT') ?: '');
+    define('NONCE_SALT', getenv('WORDPRESS_NONCE_SALT') ?: '');
+
+    $table_prefix = 'wp_';
+
+    define('WP_DEBUG', false);
+    define('FS_METHOD', 'direct');
+
+    if (!defined('ABSPATH')) {
+        define('ABSPATH', __DIR__ . '/');
+    }
+
+    require_once ABSPATH . 'wp-settings.php';

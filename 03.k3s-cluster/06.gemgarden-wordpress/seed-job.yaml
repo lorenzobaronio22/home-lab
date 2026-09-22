@@ -1,0 +1,44 @@
+# One-time seeding of the wp-data PVC from the docker host content staged on
+# the node at /mnt/staging/gemgarden-wp (rsync'd over the tailnet, Phase 2).
+# Idempotent; Job finished state is preserved by the Job controller so it does
+# not re-run on subsequent reconciles. The Deployment below won't start until
+# the content is present (initContainer waits for wp-settings.php), so an
+# empty/failed seed surfaces as the Deployment stuck on init.
+# wp-config.php is intentionally NOT part of the staging copy - it is supplied
+# by the gemgarden-wp-config ConfigMap instead.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gemgarden-wp-seed
+  labels:
+    app.kubernetes.io/name: gemgarden-wordpress
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: staging
+          hostPath:
+            path: /mnt/staging/gemgarden-wp
+            type: Directory
+        - name: data
+          persistentVolumeClaim:
+            claimName: gemgarden-wp-data
+      containers:
+        - name: seed
+          image: docker.io/alpine:3.21
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              cp -a /staging/. /var/www/html/
+              chown -R 33:33 /var/www/html
+              echo "wp content seeded"
+          volumeMounts:
+            - name: staging
+              mountPath: /staging
+              readOnly: true
+            - name: data
+              mountPath: /var/www/html

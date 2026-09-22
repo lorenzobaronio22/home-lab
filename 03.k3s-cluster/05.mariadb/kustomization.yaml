@@ -1,0 +1,8 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  # CRs applied by the "mariadb" Flux Kustomization (path 03.k3s-cluster/05.mariadb),
+  # which dependsOn the "mariadb-operator" Kustomization that installs the charts
+  # (and their CRDs) in 05.mariadb/operator first.
+  - cluster

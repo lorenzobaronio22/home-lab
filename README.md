@@ -24,7 +24,7 @@ A single-node k3s Kubernetes cluster (`oci`), hosted on an Oracle Cloud Infrastr
 ### Deployment Order
 
 1. **Cluster Setup**: Follow the bootstrap steps in [03.k3s-cluster/README.md](03.k3s-cluster/README.md)
-2. **Everything else**: Flux reconciles in order — networking → databases → postgres → identity → apps (`dependsOn` ordering)
+2. **Everything else**: Flux reconciles in order — networking → databases → postgres → identity → mariadb → gemgarden-wordpress → apps (`dependsOn` ordering)
 
 ### Key Components
 
@@ -50,6 +50,16 @@ operator is updated by a pinned `Gitrepository` tag that Renovate bumps in
 lockstep with the Keycloak server image.
 
 **Location**: [03.k3s-cluster/04.identity](03.k3s-cluster/04.identity)
+
+#### WordPress / Gem Garden (Websites)
+
+The `gemgarden.org` (and `www`) site runs on WordPress backed by a shared
+MariaDB server managed by the open-source `mariadb-operator`; exposed publicly
+via the cluster's Cloudflare Tunnel (no ingress). Each future WordPress site
+adds a `Database`/`User`/`Grant` triple to the shared server and its own site
+folder.
+
+**Locations**: [03.k3s-cluster/05.mariadb](03.k3s-cluster/05.mariadb), [03.k3s-cluster/06.gemgarden-wordpress](03.k3s-cluster/06.gemgarden-wordpress)
 
 ## Automatic Updates
 

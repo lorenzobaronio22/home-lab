@@ -1,0 +1,16 @@
+# DB application user. Password is declared by the out-of-band basic-auth
+# secret gemgarden-db-credentials in this namespace (authoritative). The
+# WordPress deployment consumes a copy with the same password in the
+# gemgarden-wordpress namespace (Keycloak pattern).
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: User
+metadata:
+  name: gemgarden
+  namespace: mariadb
+spec:
+  mariaDbRef:
+    name: mariadb
+  name: gemgarden
+  passwordSecretKeyRef:
+    name: gemgarden-db-credentials
+    key: password

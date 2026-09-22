@@ -1,0 +1,26 @@
+# Gem Garden WordPress site. DependsOn mariadb so the deployment only starts
+# once the shared instance (and its Database/User/Grant for this site) are
+# ready.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: gemgarden-wordpress
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: mariadb
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: 03.k3s-cluster/06.gemgarden-wordpress
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: gemgarden-wordpress
+      namespace: gemgarden-wordpress

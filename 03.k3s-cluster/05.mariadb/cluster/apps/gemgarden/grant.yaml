@@ -1,0 +1,14 @@
+# Grant the gemgarden user all privileges on the site database.
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Grant
+metadata:
+  name: gemgarden
+  namespace: mariadb
+spec:
+  mariaDbRef:
+    name: mariadb
+  database: wordpress
+  table: "*"
+  username: gemgarden
+  privileges:
+    - ALL

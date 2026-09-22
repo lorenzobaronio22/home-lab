@@ -1,0 +1,139 @@
+# Gem Garden WordPress site. Connects to the shared MariaDB instance in the
+# mariadb namespace (mariadb.mariadb.svc.cluster.local). TLS terminated at the
+# Cloudflare edge (gemgarden.org / www) - no Ingress, the ClusterIP Service is
+# the Cloudflare Tunnel origin.
+# Required out-of-band Secret: gemgarden-wp-credentials (username, password,
+# auth-key/secure-auth-key/logged-in-key/nonce-key/auth-salt/secure-auth-salt/
+# logged-in-salt/nonce-salt) - the DB password must match the one used by the
+# gemgarden-db-credentials secret in the mariadb namespace.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gemgarden-wordpress
+  labels:
+    app.kubernetes.io/name: gemgarden-wordpress
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gemgarden-wordpress
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gemgarden-wordpress
+    spec:
+      securityContext:
+        fsGroup: 33
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        - name: wait-for-wp-content
+          image: docker.io/alpine:3.21
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              until [ -f /var/www/html/wp-settings.php ]; do
+                echo "waiting for seeded wp content..."
+                sleep 2
+              done
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+      containers:
+        - name: wordpress
+          image: wordpress:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: WORDPRESS_DB_HOST
+              value: mariadb.mariadb.svc.cluster.local
+            - name: WORDPRESS_DB_NAME
+              value: wordpress
+            - name: WORDPRESS_DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: username
+            - name: WORDPRESS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: password
+            - name: WORDPRESS_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: auth-key
+            - name: WORDPRESS_SECURE_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: secure-auth-key
+            - name: WORDPRESS_LOGGED_IN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: logged-in-key
+            - name: WORDPRESS_NONCE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: nonce-key
+            - name: WORDPRESS_AUTH_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: auth-salt
+            - name: WORDPRESS_SECURE_AUTH_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: secure-auth-salt
+            - name: WORDPRESS_LOGGED_IN_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: logged-in-salt
+            - name: WORDPRESS_NONCE_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: gemgarden-wp-credentials
+                  key: nonce-salt
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/www/html
+            - name: wp-config
+              mountPath: /var/www/html/wp-config.php
+              subPath: wp-config.php
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gemgarden-wp-data
+        - name: wp-config
+          configMap:
+            name: gemgarden-wp-config

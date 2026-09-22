@@ -40,9 +40,11 @@ Until the Secret exists the HelmRelease errors; Flux retries on each reconcile i
 - **Image version**: Renovate watches `values.yaml` (`tag:` field) and opens PRs.
 
 Routes are managed in the Cloudflare Zero Trust dashboard (Networking → Tunnels), not in this repo.
-This cluster tunnel only ever routes the Keycloak public endpoints below; every other hostname
-(`gemgarden.org`, `im-learning.app`, `notes.*`, `vault.*`, `media.*`) lives on the **docker-host
-tunnel**, whose connector can reach docker containers and the tailnet but not `*.svc.cluster.local`.
+This cluster tunnel routes the Keycloak public endpoints and the WordPress site below; the remaining
+hostnames (`im-learning.app`, `notes.*`, `vault.*`, `media.*`) live on the **docker-host tunnel**,
+whose connector can reach docker containers and the tailnet but not `*.svc.cluster.local`. The
+`gemgarden.org` hostnames moved from the docker-host tunnel to this one during the WordPress
+migration (split-tunnel rule: never put the same hostname on both tunnels).
 
 ## Current public hostname routes
 
@@ -55,9 +57,12 @@ forwarded to the origin and non-matching paths fall through to the catch-all
 |---|---|---|
 | `auth.lorenzobaronio.com` | `/realms/*` | `http://keycloak-service.keycloak.svc.cluster.local:8080` |
 | `auth.lorenzobaronio.com` | `/resources/*` | `http://keycloak-service.keycloak.svc.cluster.local:8080` |
+| `gemgarden.org` | `/` | `http://gemgarden-wordpress.gemgarden-wordpress.svc.cluster.local` |
+| `www.gemgarden.org` | `/` | `http://gemgarden-wordpress.gemgarden-wordpress.svc.cluster.local` |
 
-These expose Keycloak's OIDC + theme endpoints publicly; the admin console and
-everything else stay tailnet-only (see `04.identity/README.md`).
+These expose Keycloak's OIDC + theme endpoints and the WordPress site publicly;
+the admin console and everything else stay tailnet-only (see
+`04.identity/README.md` / `06.gemgarden-wordpress/README.md`).
 
 ## Migration checklist
 

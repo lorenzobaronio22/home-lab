@@ -1,0 +1,16 @@
+# Persistent storage for /var/www/html (site code, wp-content uploads, themes,
+# plugin data). local-path binds to the single k3s node. Pre-populated once by
+# the seed Job from a hostPath staging copy of the docker host's wp_data.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gemgarden-wp-data
+  labels:
+    app.kubernetes.io/name: gemgarden-wordpress
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 2Gi

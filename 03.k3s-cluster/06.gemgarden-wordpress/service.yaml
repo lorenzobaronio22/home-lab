@@ -1,0 +1,17 @@
+# Cloudflare tunnel origin service (no Ingress). Exposed publicly as
+# gemgarden.org / www.gemgarden.org via the cluster tunnel's Public Hostname
+# routes (dashboard-managed) -> http://gemgarden-wordpress.gemgarden-wordpress.svc.cluster.local
+apiVersion: v1
+kind: Service
+metadata:
+  name: gemgarden-wordpress
+  labels:
+    app.kubernetes.io/name: gemgarden-wordpress
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: gemgarden-wordpress
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

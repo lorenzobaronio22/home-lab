@@ -1,0 +1,70 @@
+# Shared MariaDB instance bootstrapped from the Gem Garden logical dump in OCI
+# object storage (dedicated k3s-wordpress-backups bucket).
+#
+# Required out-of-band Secrets (Flux retries until they exist):
+#   - mariadb/root                       -> root-password (operator admin user)
+#   - mariadb/wordpress-s3-backup-creds  -> ACCESS_KEY_ID / SECRET_ACCESS_KEY
+#
+# bootstraps from the closest logical backup (backup.<RFC3339-UTC>.sql) on the
+# S3 prefix that is <= targetRecoveryTime. This value MUST be >= the timestamp
+# written in the final dump filename before merging - set it to match.
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: MariaDB
+metadata:
+  name: mariadb
+  namespace: mariadb
+  labels:
+    app.kubernetes.io/name: mariadb
+spec:
+  image: mariadb:11.4
+  imagePullPolicy: IfNotPresent
+  rootPasswordSecretKeyRef:
+    name: mariadb-root
+    key: root-password
+  bootstrapFrom:
+    s3:
+      bucket: k3s-wordpress-backups
+      prefix: gemgarden/migration
+      # OCI S3-compat endpoint (no scheme; TLS via tls.enabled), region is a
+      # client hint - the endpoint URL selects the actual OCI region.
+      endpoint: axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
+      region: us-east-1
+      accessKeyIdSecretKeyRef:
+        name: wordpress-s3-backup-creds
+        key: ACCESS_KEY_ID
+      secretAccessKeySecretKeyRef:
+        name: wordpress-s3-backup-creds
+        key: SECRET_ACCESS_KEY
+      tls:
+        enabled: true
+    # IMPORTANT: update to the RFC3339 UTC timestamp of the final dump before
+    # merging (the operator selects the newest backup not after this time).
+    targetRecoveryTime: "2026-09-22T00:23:15Z"
+  storage:
+    size: 10Gi
+    storageClassName: local-path
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  readinessProbe:
+    initialDelaySeconds: 15
+    periodSeconds: 5
+    timeoutSeconds: 5
+    exec:
+      command:
+        - bash
+        - -c
+        - mariadb-admin ping -u root -p"${MARIADB_ROOT_PASSWORD}"
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    exec:
+      command:
+        - bash
+        - -c
+        - mariadb-admin ping -u root -p"${MARIADB_ROOT_PASSWORD}"

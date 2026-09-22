@@ -1,0 +1,53 @@
+---
+# mariadb-operator controller + CRDs in the mariadb-operator namespace.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mariadb-operator
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: networking
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: 03.k3s-cluster/05.mariadb/operator
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: mariadb-operator
+      namespace: mariadb-operator
+---
+# Shared MariaDB instance + per-site Database/User/Grant CRs. wait:true + the
+# MariaDB healthCheck gate the entire cutover: the server only becomes ready
+# once it bootstrapped from the S3 dump, and the gemgarden-wordpress
+# Kustomization dependsOn this one.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: mariadb
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: mariadb-operator
+  interval: 30m
+  retryInterval: 1m
+  timeout: 5m
+  path: 03.k3s-cluster/05.mariadb
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  prune: true
+  wait: true
+  healthChecks:
+    - apiVersion: k8s.mariadb.com/v1alpha1
+      kind: MariaDB
+      name: mariadb
+      namespace: mariadb

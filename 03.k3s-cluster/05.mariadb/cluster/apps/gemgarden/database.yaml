@@ -1,0 +1,13 @@
+# Logical database for the Gem Garden WordPress site on the shared "mariadb"
+# instance. Name must match the database dumped from the docker host
+# (MYSQL_DATABASE in the compose .env) so the CR is a no-op against the
+# restored schema. Confirm the value in Phase 1 before merging.
+apiVersion: k8s.mariadb.com/v1alpha1
+kind: Database
+metadata:
+  name: gemgarden
+  namespace: mariadb
+spec:
+  mariaDbRef:
+    name: mariadb
+  name: wordpress

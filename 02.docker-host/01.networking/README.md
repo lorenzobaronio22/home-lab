@@ -13,11 +13,14 @@ Cloudflare load-balances requests across them — a connector picked for an orig
 (cluster-only `*.svc.cluster.local`, or docker/tailnet-only names) answers `502`. Each tunnel keeps
 only the origins its connector can actually reach:
 
-- **Docker-host tunnel (this file)** — docker-container and tailnet origins: `gemgarden.org`,
-  `im-learning.app` (+`www`, `lab`), `notes.lorenzobaronio.com` (docmost), `vault.lorenzobaronio.com`
+- **Docker-host tunnel (this file)** — docker-container and tailnet origins: `im-learning.app`
+  (+`www`, `lab`), `notes.lorenzobaronio.com` (docmost), `vault.lorenzobaronio.com`
   (vaultwarden), `media.lorenzobaronio.com` (jellyfin on the tailnet).
-- **Cluster tunnel (`03.k3s-cluster/01.networking/cloudflared`)** — only the two
-  `auth.lorenzobaronio.com` Keycloak routes (`/realms/*`, `/resources/*` → the k3s Service).
+  `gemgarden.org` (+`www`) moved to the cluster tunnel when the WordPress site
+  was migrated into k3s (`03.k3s-cluster/01.networking/cloudflared/README.md`).
+- **Cluster tunnel (`03.k3s-cluster/01.networking/cloudflared`)** — Keycloak
+  (`auth.lorenzobaronio.com` `/realms/*` + `/resources/*`) and the WordPress
+  site (`gemgarden.org`, `www.gemgarden.org` → the k3s Service).
 
 ## Deployment Order
 
