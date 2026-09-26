@@ -10,6 +10,10 @@ Backups go to OCI Object Storage via its S3 Compatibility API using the
 continuous WAL archiving + a nightly base backup at 03:00 UTC, retention 14d.
 Data is **not** expected to survive VM rebuilds — it is rebuilt from backups.
 
+The bucket is shared with the MariaDB stack (`../05.mariadb/`); workloads are
+isolated by prefix. Barman appends the cluster name, so this stack owns
+`postgres/{base,wals}/` and MariaDB owns `mariadb/`.
+
 ## Layout
 
 | Path | What it deploys |
@@ -27,18 +31,23 @@ CRDs); the `postgres` Kustomization applies the CRs that use them.
 
 ## One-time OCI setup
 
-1. Create a bucket in your home region, e.g. `k3s-postgres-backups`.
-2. Create an IAM policy allowing your user to manage objects in that bucket.
+1. Create a bucket in your home region, e.g. `homelab-backups` (shared with
+   `../05.mariadb/`).
+2. No IAM policy needed: a customer secret key inherits its owner's
+   permissions, and an administrator can already manage objects tenancy-wide.
+   Do **not** add a blanket policy for `All Domain Users` — grant per bucket
+   if you ever need a non-admin identity.
 3. Console → Profile → **Customer secret keys** → generate key; copy the  
    Access Key and Secret Key (the secret is shown only once).
 4. Find your tenancy's object storage namespace and region identifier.
-5. Edit `barman-plugin/objectstore.yaml`: replace `<OCI_NAMESPACE>` and
+5. Edit `workload/objectstore.yaml`: replace `<OCI_NAMESPACE>` and
    `<OCI_REGION>` in the endpoint URL.
 6. Create the credentials Secret manually (kept out of git, same pattern as
-   the Tailscale OAuth secret):
+   the Tailscale OAuth secret). The same key is used by both namespaces, so
+   create it in `mariadb` too:
 
    ```bash
-   kubectl -n postgres create secret generic oci-backup-creds \
+   kubectl -n postgres create secret generic homelab-backup-creds \
      --from-literal=ACCESS_KEY_ID='<access key>' \
      --from-literal=SECRET_ACCESS_KEY='<secret key>'
    ```
@@ -47,8 +56,8 @@ Notes:
 - The endpoint must **not** include the bucket name — including it breaks
   backup listing while uploads still succeed.
 - `AWS_REGION=us-east-1` is set on the plugin pod (see
-  `barman-plugin/helmrelease.yaml`) because boto needs *a* region; the
-  endpoint URL selects the actual OCI region.
+  `workload/objectstore.yaml` → `instanceSidecarConfiguration.env`) because
+  boto needs *a* region; the endpoint URL selects the actual OCI region.
 
 ## Day-2 operations
 
@@ -65,6 +74,10 @@ postgres-rw.postgres.svc.cluster.local   # read/write
 postgres-ro.postgres.svc.cluster.local   # read-only
 ```
 
+`kubectl cnpg` needs the CloudNativePG kubectl plugin; without it apply a
+one-off `Backup` CR (`spec.method: plugin` + `pluginConfiguration.name:
+barman-cloud.cloudnative-pg.io`) to take a base backup.
+
 The pgweb client (superuser credentials preloaded from the
 `postgres-superuser` Secret) is available at
 `https://pgweb.tail10187.ts.net` for anyone on the tailnet.
@@ -72,7 +85,7 @@ The pgweb client (superuser credentials preloaded from the
 ### Restoring after a VM rebuild
 
 1. Rebuild k3s + Flux per `../README.md`; Flux recreates the operator,
-   plugin and ObjectStore. Recreate the `oci-backup-creds` Secret (step 6
+   plugin and ObjectStore. Recreate the `homelab-backup-creds` Secret (step 6
    above) **before** applying the Cluster, or let Flux retry until it exists.
 2. Apply a recovery Cluster (do **not** reuse the old cluster name):
 

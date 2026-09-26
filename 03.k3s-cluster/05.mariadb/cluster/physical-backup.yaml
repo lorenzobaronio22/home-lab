@@ -1,9 +1,14 @@
 # Nightly physical backup (mariadb-backup) of the shared MariaDB instance to
 # OCI object storage. Mirrors the CNPG ScheduledBackup convention (03:00 UTC).
+# Shared bucket with the postgres stack; the prefix isolates this workload.
+#
+# spec.storage is immutable, so changing bucket/prefix/credentials requires a
+# new object - hence the "daily" name (it backs up every site on the instance,
+# not just Gem Garden).
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: PhysicalBackup
 metadata:
-  name: physicalbackup-gemgarden
+  name: physicalbackup-daily
   namespace: mariadb
 spec:
   mariaDbRef:
@@ -12,19 +17,25 @@ spec:
     cron: "0 3 * * *"
     suspend: false
     immediate: true
+    # Bump this identifier to force an out-of-band backup (the operator fires
+    # one whenever it differs from status.lastScheduleOnDemand).
+    onDemand: "1"
   compression: gzip
   maxRetention: 336h
   storage:
     s3:
-      bucket: k3s-wordpress-backups
-      prefix: gemgarden/backups
+      bucket: homelab-backups
+      prefix: mariadb/gemgarden/backups
+      # OCI S3-compat endpoint (no scheme; TLS via tls.enabled). The region must
+      # match the endpoint's OCI region (eu-milan-1): SigV4 signs the region and
+      # OCI rejects a mismatch with AuthorizationHeaderMalformed.
       endpoint: axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
       region: eu-milan-1
       accessKeyIdSecretKeyRef:
-        name: wordpress-s3-backup-creds
+        name: homelab-backup-creds
         key: ACCESS_KEY_ID
       secretAccessKeySecretKeyRef:
-        name: wordpress-s3-backup-creds
+        name: homelab-backup-creds
         key: SECRET_ACCESS_KEY
       tls:
         enabled: true

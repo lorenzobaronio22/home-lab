@@ -1,13 +1,13 @@
-# Shared MariaDB instance bootstrapped from the Gem Garden logical dump in OCI
-# object storage (dedicated k3s-wordpress-backups bucket).
+# Shared MariaDB instance holding one database per WordPress site. Backups go to
+# the shared OCI bucket under the mariadb/ prefix - see physical-backup.yaml.
 #
 # Required out-of-band Secrets (Flux retries until they exist):
-#   - mariadb/root                       -> root-password (operator admin user)
-#   - mariadb/wordpress-s3-backup-creds  -> ACCESS_KEY_ID / SECRET_ACCESS_KEY
+#   - mariadb/mariadb-root                -> root-password (operator admin user)
+#   - mariadb/homelab-backup-creds       -> ACCESS_KEY_ID / SECRET_ACCESS_KEY
 #
-# bootstraps from the closest logical backup (backup.<RFC3339-UTC>.sql) on the
-# S3 prefix that is <= targetRecoveryTime. This value MUST be >= the timestamp
-# written in the final dump filename before merging - set it to match.
+# No spec.bootstrapFrom: the Gem Garden database was migrated once from a
+# logical dump and the PVC has been live since. Recovery is now PhysicalBackup
+# only (bootstrapFrom.backupRef) - see README.md.
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: MariaDB
 metadata:
@@ -21,26 +21,6 @@ spec:
   rootPasswordSecretKeyRef:
     name: mariadb-root
     key: root-password
-  bootstrapFrom:
-    s3:
-      bucket: k3s-wordpress-backups
-      prefix: gemgarden/migration
-      # OCI S3-compat endpoint (no scheme; TLS via tls.enabled). The region must
-      # match the bucket's OCI region (eu-milan-1) because the bucket IAM policy
-      # is scoped with `where request.region = 'eu-milan-1'`.
-      endpoint: axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
-      region: eu-milan-1
-      accessKeyIdSecretKeyRef:
-        name: wordpress-s3-backup-creds
-        key: ACCESS_KEY_ID
-      secretAccessKeySecretKeyRef:
-        name: wordpress-s3-backup-creds
-        key: SECRET_ACCESS_KEY
-      tls:
-        enabled: true
-    # IMPORTANT: update to the RFC3339 UTC timestamp of the final dump before
-    # merging (the operator selects the newest backup not after this time).
-    targetRecoveryTime: "2026-09-22T00:23:15Z"
   storage:
     size: 10Gi
     storageClassName: local-path
