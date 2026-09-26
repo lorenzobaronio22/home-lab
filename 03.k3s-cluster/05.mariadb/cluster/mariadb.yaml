@@ -25,10 +25,11 @@ spec:
     s3:
       bucket: k3s-wordpress-backups
       prefix: gemgarden/migration
-      # OCI S3-compat endpoint (no scheme; TLS via tls.enabled), region is a
-      # client hint - the endpoint URL selects the actual OCI region.
+      # OCI S3-compat endpoint (no scheme; TLS via tls.enabled). The region must
+      # match the bucket's OCI region (eu-milan-1) because the bucket IAM policy
+      # is scoped with `where request.region = 'eu-milan-1'`.
       endpoint: axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
-      region: us-east-1
+      region: eu-milan-1
       accessKeyIdSecretKeyRef:
         name: wordpress-s3-backup-creds
         key: ACCESS_KEY_ID

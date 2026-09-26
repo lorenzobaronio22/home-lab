@@ -19,7 +19,7 @@ spec:
       bucket: k3s-wordpress-backups
       prefix: gemgarden/backups
       endpoint: axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
-      region: us-east-1
+      region: eu-milan-1
       accessKeyIdSecretKeyRef:
         name: wordpress-s3-backup-creds
         key: ACCESS_KEY_ID
