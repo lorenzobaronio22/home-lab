@@ -26,8 +26,10 @@ spec:
 ---
 # Shared MariaDB instance + per-site Database/User/Grant CRs. wait:true + the
 # MariaDB healthCheck gate the entire cutover: the server only becomes ready
-# once it bootstrapped from the S3 dump, and the gemgarden-wordpress
-# Kustomization dependsOn this one.
+# once the instance pod is running on its retained PVC (no bootstrapFrom - the
+# Gem Garden data was migrated once and is preserved in the PVC and the
+# PhysicalBackup in the shared bucket). The gemgarden-wordpress Kustomization
+# dependsOn this one.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
