@@ -5,9 +5,13 @@
 #   - mariadb/mariadb-root                -> root-password (operator admin user)
 #   - mariadb/homelab-backup-creds       -> ACCESS_KEY_ID / SECRET_ACCESS_KEY
 #
-# No spec.bootstrapFrom: the Gem Garden database was migrated once from a
-# logical dump and the PVC has been live since. Recovery is now PhysicalBackup
-# only (bootstrapFrom.backupRef) - see README.md.
+# TEMPORARY: spec.bootstrapFrom below is the block this manifest had when the
+# server was first restored from the Gem Garden logical dump. The field is
+# immutable, so it cannot simply be deleted - it is removed by recreating the
+# CR (prune + re-apply) once a verified PhysicalBackup exists in the shared
+# bucket. It is dead config in the meantime: only read at first init, and the
+# PVC has been live since 2026-09-22. Recovery is PhysicalBackup-only
+# (bootstrapFrom.backupRef) - see README.md.
 apiVersion: k8s.mariadb.com/v1alpha1
 kind: MariaDB
 metadata:
@@ -21,6 +25,21 @@ spec:
   rootPasswordSecretKeyRef:
     name: mariadb-root
     key: root-password
+  bootstrapFrom:
+    s3:
+      bucket: k3s-wordpress-backups
+      prefix: gemgarden/migration
+      endpoint: axwwei3movpa.compat.objectstorage.eu-milan-1.oraclecloud.com
+      region: us-east-1
+      accessKeyIdSecretKeyRef:
+        name: wordpress-s3-backup-creds
+        key: ACCESS_KEY_ID
+      secretAccessKeySecretKeyRef:
+        name: wordpress-s3-backup-creds
+        key: SECRET_ACCESS_KEY
+      tls:
+        enabled: true
+    targetRecoveryTime: "2026-09-22T00:23:15Z"
   storage:
     size: 10Gi
     storageClassName: local-path
